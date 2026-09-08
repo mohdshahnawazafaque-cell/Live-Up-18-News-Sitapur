@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { hi } from "date-fns/locale";
 import { Share2, MessageCircle, Link2, ArrowLeft, Send } from "lucide-react";
 import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";
+import AdBanner from "../components/AdBanner";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -85,7 +86,16 @@ export default function Article() {
   const handleWhatsAppShare = () => {
     const url = window.location.href;
     const title = getLocalizedText(article, 'headline', language);
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(title + " " + url)}`, "_blank");
+    const summary = getLocalizedText(article, 'shortSummary', language);
+    const message = `*LIVE UP 18 NEWS*
+
+*${title}*
+
+${summary.substring(0, 100)}...
+
+पूरी खबर पढ़ने और वीडियो देखने के लिए यहाँ क्लिक करें 👇
+${url}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const handleCopyLink = () => {
@@ -275,9 +285,7 @@ export default function Article() {
       </article>
 
       <aside className="lg:col-span-4 flex flex-col gap-8">
-        <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-6 h-[300px] flex items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-300">
-          {language === 'hi' ? 'विज्ञापन स्थान' : 'Advertisement Space'}
-        </div>
+        <AdBanner position="article_sidebar" className="h-[300px]" />
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
           <div className="bg-slate-900 text-white p-4">

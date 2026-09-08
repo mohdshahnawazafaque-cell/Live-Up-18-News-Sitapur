@@ -34,3 +34,12 @@ export interface State {
   name: string;
   districts: string[];
 }
+
+export interface Advertisement {
+  id: string;
+  imageUrl: string;
+  linkUrl: string;
+  position: 'home_top' | 'home_middle' | 'article_sidebar' | 'article_bottom';
+  active: boolean;
+  createdAt: string;
+}

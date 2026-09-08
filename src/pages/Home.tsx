@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
+import AdBanner from "../components/AdBanner";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
