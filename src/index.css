@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --animate-marquee: marquee 25s linear infinite;
+  --animate-shimmer: shimmer 2s infinite;
+  
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  
+  @keyframes shimmer {
+    100% { transform: translateX(-100%); }
+  }
+}
+
+.pause {
+  animation-play-state: paused;
+}
+
+html.dark {
+  color-scheme: dark;
+}

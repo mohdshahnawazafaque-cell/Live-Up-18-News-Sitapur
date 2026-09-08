@@ -1,0 +1,6 @@
+{
+  "name": "LIVE UP 18 NEWS",
+  "description": "A modern, professional, responsive Indian digital news portal in Hindi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
