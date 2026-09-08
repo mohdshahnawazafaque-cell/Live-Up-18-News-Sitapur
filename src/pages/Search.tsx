@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
+import { collection, query as fsQuery, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 export default function Search() {
   const [searchParams] = useSearchParams();
@@ -11,15 +13,17 @@ export default function Search() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    // Let's just fetch all and filter client side for simplicity, or we can use an endpoint if one exists
-    fetch("/api/news?limit=100")
-      .then(res => res.json())
-      .then(data => {
-        const articles = data.articles || [];
+    const fetchNews = async () => {
+      setLoading(true);
+      try {
+        const q = fsQuery(collection(db, "news"), orderBy("publicationDate", "desc"), limit(100));
+        const snap = await getDocs(q);
+        const articles: NewsArticle[] = [];
+        snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+        
         if (query) {
           const lowerQuery = query.toLowerCase();
-          const filtered = articles.filter((a: NewsArticle) => {
+          const filtered = articles.filter((a: NewsArticle) => { 
              const titleMatch = (a.headline || "").toLowerCase().includes(lowerQuery) || (a.headlineEn || "").toLowerCase().includes(lowerQuery);
              const contentMatch = (a.shortSummary || "").toLowerCase().includes(lowerQuery) || (a.shortSummaryEn || "").toLowerCase().includes(lowerQuery);
              return titleMatch || contentMatch;
@@ -28,12 +32,13 @@ export default function Search() {
         } else {
           setResults([]);
         }
-        setLoading(false);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error(err);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchNews();
   }, [query]);
 
   return (

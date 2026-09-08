@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
+import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 export default function Category() {
   const { id } = useParams<{ id: string }>();
@@ -13,17 +15,25 @@ export default function Category() {
   const categoryName = id ? id.replace(/-/g, ' ').toUpperCase() : '';
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/news?category=${categoryName}`)
-      .then(res => res.json())
-      .then(data => {
-        setArticles(data.articles || []);
-        setLoading(false);
-      })
-      .catch(err => {
+    const fetchNews = async () => {
+      setLoading(true);
+      try {
+        const q = query(collection(db, "news"), where("category", "==", categoryName));
+        // Note: orderBy("publicationDate", "desc") requires a composite index if where() is used.
+        // We'll fetch and sort in client to avoid index requirement for now.
+        const snap = await getDocs(q);
+        const fetchedArticles: NewsArticle[] = [];
+        snap.forEach(doc => fetchedArticles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+        
+        fetchedArticles.sort((a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime());
+        setArticles(fetchedArticles);
+      } catch (err) {
         console.error(err);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchNews();
   }, [categoryName]);
 
   if (loading) {

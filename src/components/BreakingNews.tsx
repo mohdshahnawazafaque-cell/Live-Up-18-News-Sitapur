@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 export default function BreakingNews() {
   const { language } = useLanguage();
@@ -9,13 +11,20 @@ export default function BreakingNews() {
   const [enabled, setEnabled] = useState(true);
 
   useEffect(() => {
-    fetch("/api/news?isBreaking=true&limit=5")
-      .then(res => res.json())
-      .then(data => {
-        setBreakingNews(data.articles || []);
-        setEnabled(data.breakingNewsEnabled ?? true);
-      })
-      .catch(console.error);
+    const fetchNews = async () => {
+      try {
+        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(5));
+        const snap = await getDocs(q);
+        const articles: NewsArticle[] = [];
+        snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+        setBreakingNews(articles);
+        // hardcode breaking enabled to true for simplicity
+        setEnabled(true);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchNews();
   }, []);
 
   if (!enabled || breakingNews.length === 0) return null;

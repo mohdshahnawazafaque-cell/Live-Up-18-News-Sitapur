@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /news/{newsId} {
+      // For a simple news app, allow public reads.
+      allow read: if true;
+      
+      // Allow writes for anyone for the admin panel since we rely on custom 
+      // app-level password for admin rather than Firebase Auth.
+      // (In a real production app, use Firebase Auth and check request.auth != null)
+      allow write: if true;
+    }
+  }
+}

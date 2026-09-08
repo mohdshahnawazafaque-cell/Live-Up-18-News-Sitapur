@@ -19,6 +19,7 @@ export interface NewsArticle {
   sourceUrl?: string;
   relatedNewsIds?: string[];
   isBreaking?: boolean;
+  videoUrl?: string;
   views?: number;
 }
 

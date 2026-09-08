@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 export default function Home() {
   const { language } = useLanguage();
@@ -13,31 +15,47 @@ export default function Home() {
   const [categories, setCategories] = useState<{ [key: string]: NewsArticle[] }>({});
 
   useEffect(() => {
-    fetch("/api/videos").then(res => res.json()).then(data => setVideos(data.videos || [])).catch(console.error);
-    // Fetch top news
-    fetch("/api/news?limit=25")
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        const articles = data.articles || [];
+    // Videos will be extracted from news articles with videoUrl
+
+    const fetchNews = async () => {
+      try {
+        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(25));
+        const querySnapshot = await getDocs(q);
+        const articles: NewsArticle[] = [];
+        querySnapshot.forEach((doc) => {
+          articles.push({ id: doc.id, ...doc.data() } as NewsArticle);
+        });
+
+        
+        const videoArticles = articles.filter(a => a.videoUrl);
+        setVideos(videoArticles.map(a => ({
+          id: a.id,
+          title: a.headline,
+          titleEn: a.headlineEn || a.headline,
+          url: a.videoUrl,
+          date: a.publicationDate
+        })));
+
         if (articles.length > 0) {
           setFeaturedNews(articles[0]);
           setTopHeadlines(articles.slice(1, 5));
           setLatestNews(articles.slice(5, 15));
           
-          // Group some for sections
-          const grouped: { [key: string]: NewsArticle[] } = {};
-          ["INDIA", "UTTAR PRADESH", "POLITICS", "CRIME", "SPORTS", "ENTERTAINMENT"].forEach(cat => {
-            grouped[cat] = articles.filter((a: NewsArticle) => a.category === cat).slice(0, 4);
+          const cats: { [key: string]: NewsArticle[] } = {};
+          articles.forEach(article => {
+            if (!cats[article.category]) cats[article.category] = [];
+            if (cats[article.category].length < 4) {
+              cats[article.category].push(article);
+            }
           });
-          setCategories(grouped);
+          setCategories(cats);
         }
-      })
-      .catch(err => {
-        console.error(err);
-      });
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      }
+    };
+
+    fetchNews();
   }, []);
 
   return (
@@ -127,12 +145,12 @@ export default function Home() {
         </div>
       </section>
 
-            {/* AI Video News Section */}
+            {/* Video News Section */}
       <section className="bg-slate-900 dark:bg-black rounded-xl p-6 text-white my-8 border border-slate-800">
         <div className="flex items-center justify-between border-b-2 border-red-600 mb-6 pb-2">
           <h3 className="text-2xl font-black uppercase flex items-center gap-2">
             <span className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
-            {language === 'hi' ? 'AI वीडियो न्यूज़ गैलरी' : 'AI Video News Gallery'}
+            {language === 'hi' ? 'वीडियो न्यूज़ गैलरी' : 'Video News Gallery'}
           </h3>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -181,7 +199,7 @@ export default function Home() {
             </>
           ) : (
              <div className="col-span-full py-12 text-center text-slate-400">
-               {language === 'hi' ? 'AI द्वारा जनरेट किए गए ताज़ा वीडियो लोड हो रहे हैं...' : 'Loading latest AI generated videos...'}
+               {language === 'hi' ? 'ताज़ा वीडियो लोड हो रहे हैं...' : 'Loading latest videos...'}
              </div>
           )}
         </div>

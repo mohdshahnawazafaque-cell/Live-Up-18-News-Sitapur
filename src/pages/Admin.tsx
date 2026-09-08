@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper } from "lucide-react";
 import { NewsArticle } from "../types";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
+import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, addDoc, setDoc } from "firebase/firestore";
+import { db, storage, auth } from "../lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { signInAnonymously } from "firebase/auth";
 
 export default function Admin() {
   const { language } = useLanguage();
@@ -25,21 +29,19 @@ export default function Admin() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (data.success) {
-        localStorage.setItem("adminToken", data.token);
+    if (email === "liveup18news@gmail.com" && password === "Sh@sahiba9653") {
+      try {
+        await signInAnonymously(auth);
+        localStorage.setItem("adminToken", "admin-auth-token-123");
         setIsLoggedIn(true);
-      } else {
-        setLoginError(data.error || "Login failed");
+      } catch (err) {
+        console.error("Firebase auth error:", err);
+        // Fallback if anonymous auth is disabled
+        localStorage.setItem("adminToken", "admin-auth-token-123");
+        setIsLoggedIn(true);
       }
-    } catch (err) {
-      setLoginError("An error occurred. Please try again.");
+    } else {
+      setLoginError("Invalid credentials");
     }
   };
 
@@ -98,15 +100,11 @@ export default function Admin() {
 
   const fetchData = async () => {
     try {
-      const [newsRes, sourcesRes] = await Promise.all([
-        fetch("/api/news?limit=100"),
-        fetch("/api/admin/sources")
-      ]);
-      const newsData = await newsRes.json();
-      const sourcesData = await sourcesRes.json();
-      
-      setNews(newsData.articles || []);
-      setSources(sourcesData.sources || []);
+      const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(100));
+      const snap = await getDocs(q);
+      const articles: NewsArticle[] = [];
+      snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+      setNews(articles);
     } catch (err) {
       console.error(err);
     } finally {
@@ -114,40 +112,14 @@ export default function Admin() {
     }
   };
 
-  const handleAddSource = async () => {
-    if (!newSource) return;
-    try {
-      await fetch("/api/admin/sources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: newSource })
-      });
-      setNewSource("");
-      fetchData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleDeleteSource = async (url: string) => {
-    try {
-      await fetch("/api/admin/sources", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      });
-      fetchData();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const handleDeleteNews = async (id: string) => {
+    if(!confirm("Are you sure you want to delete this news?")) return;
     try {
-      await fetch(`/api/admin/news/${id}`, { method: "DELETE" });
+      await deleteDoc(doc(db, "news", id));
       fetchData();
     } catch (err) {
       console.error(err);
+      alert("Failed to delete");
     }
   };
 
@@ -162,10 +134,10 @@ export default function Admin() {
         });
       }
       await fetchData();
-      alert("AI Partner has finished processing feeds!");
+      alert("Finished processing feeds!");
     } catch (err) {
       console.error(err);
-      alert("Error occurred while AI was fetching news.");
+      alert("Error occurred while fetching news.");
     } finally {
       setIsProcessing(false);
     }
@@ -179,10 +151,10 @@ export default function Admin() {
         <div>
           <h1 className="text-3xl font-black text-slate-900 uppercase flex items-center gap-2">
             <Settings className="text-red-600" size={32} />
-            Admin & AI Partner Dashboard
+            Admin Dashboard
           </h1>
           <p className="text-slate-600 mt-2 font-medium">
-            आपका AI पार्टनर हर घंटे स्वचालित रूप से (automatically) यहाँ दिए गए RSS Feeds से न्यूज़ लाकर प्रोसेस करेगा। आप भी जब चाहें मैन्युअली ट्रिगर कर सकते हैं।
+            यह न्यूज़ पोर्टल का एडमिन डैशबोर्ड है।
           </p>
         </div>
         <button
@@ -201,56 +173,94 @@ export default function Admin() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="bg-slate-900 text-white p-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Globe size={20} /> AI News Sources (RSS)
-              </h2>
-            </div>
-            <div className="p-4 flex flex-col gap-4">
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={newSource}
-                  onChange={(e) => setNewSource(e.target.value)}
-                  placeholder="https://example.com/rss"
-                  className="flex-1 border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600"
-                />
-                <button 
-                  onClick={handleAddSource}
-                  className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 transition-colors"
-                >
-                  <Plus size={20} />
-                </button>
-              </div>
-              <ul className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                {sources.map((src, idx) => (
-                  <li key={idx} className="flex items-center justify-between bg-slate-50 border border-slate-200 p-2 rounded text-sm">
-                    <span className="truncate mr-2 flex-1 text-slate-700" title={src}>{src}</span>
-                    <button onClick={() => handleDeleteSource(src)} className="text-red-500 hover:text-red-700 p-1">
-                      <Trash2 size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-             <div className="bg-slate-900 text-white p-4">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <RefreshCw size={20} /> Manual AI Fetch
+                <Plus size={20} /> Add News Manually
               </h2>
             </div>
             <div className="p-4">
-              <p className="text-sm text-slate-600 mb-4">
-                AI पार्टनर बैकग्राउंड में अपने आप काम कर रहा है, लेकिन आप अभी तुरंत ताज़ा ख़बरें लाने के लिए इसे कमांड दे सकते हैं।
-              </p>
-              <button 
-                onClick={handleTriggerAIFetch}
-                disabled={isProcessing}
-                className={`w-full py-3 rounded-lg font-bold text-white transition-colors flex items-center justify-center gap-2 ${isProcessing ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800'}`}
-              >
-                {isProcessing ? <RefreshCw className="animate-spin" size={20} /> : <RefreshCw size={20} />}
-                {isProcessing ? "AI is Working..." : "Ask AI to Fetch Now"}
-              </button>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setIsProcessing(true);
+                try {
+                  const form = e.target as HTMLFormElement;
+                  const imageFile = (form.imageFile as HTMLInputElement).files?.[0];
+                  const videoFile = (form.videoFile as HTMLInputElement).files?.[0];
+                  
+                  let finalImageUrl = (form.imageUrl as HTMLInputElement).value;
+                  let finalVideoUrl = (form.videoUrl as HTMLInputElement).value;
+
+                  // Upload Image if selected
+                  if (imageFile) {
+                    const imgRef = ref(storage, `news-images/${Date.now()}-${imageFile.name}`);
+                    await uploadBytes(imgRef, imageFile);
+                    finalImageUrl = await getDownloadURL(imgRef);
+                  }
+
+                  // Upload Video if selected
+                  if (videoFile) {
+                    const vidRef = ref(storage, `news-videos/${Date.now()}-${videoFile.name}`);
+                    await uploadBytes(vidRef, videoFile);
+                    finalVideoUrl = await getDownloadURL(vidRef);
+                  }
+
+                  if (!finalImageUrl) {
+                    finalImageUrl = 'https://picsum.photos/seed/' + Math.random() + '/800/450';
+                  }
+
+                  const newsItem = {
+                    headline: (form.headline as HTMLInputElement).value,
+                    category: (form.category as HTMLSelectElement).value,
+                    content: (form.content as HTMLTextAreaElement).value,
+                    featuredImage: finalImageUrl,
+                    videoUrl: finalVideoUrl || null,
+                    publicationDate: new Date().toISOString(),
+                    author: "मो० शाहनवाज़",
+                    sourceAttribution: "LIVE UP 18 NEWS"
+                  };
+                  await addDoc(collection(db, "news"), newsItem);
+                  form.reset();
+                  fetchData();
+                  alert("News Added!");
+                } catch(err) {
+                  console.error(err);
+                  alert("Error adding news: " + err.message);
+                } finally {
+                  setIsProcessing(false);
+                }
+              }} className="flex flex-col gap-3">
+                <input name="headline" required placeholder="Headline" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
+                <select name="category" required className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600">
+                  <option value="UTTAR PRADESH">Uttar Pradesh</option>
+                  <option value="INDIA">India</option>
+                  <option value="POLITICS">Politics</option>
+                  <option value="CRIME">Crime</option>
+                  <option value="BUSINESS">Business</option>
+                  <option value="SPORTS">Sports</option>
+                  <option value="ENTERTAINMENT">Entertainment</option>
+                </select>
+                
+                <div className="flex flex-col gap-1 border border-slate-200 p-3 rounded bg-slate-50">
+                  <label className="text-xs font-bold text-slate-700">Cover Image (Optional)</label>
+                  <input name="imageFile" type="file" accept="image/*" className="text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                  <div className="text-center text-xs text-slate-400">OR</div>
+                  <input name="imageUrl" placeholder="Paste Image URL" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
+                </div>
+
+                <div className="flex flex-col gap-1 border border-slate-200 p-3 rounded bg-slate-50">
+                  <label className="text-xs font-bold text-slate-700">Video (Optional)</label>
+                  <input name="videoFile" type="file" accept="video/*" className="text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                  <div className="text-center text-xs text-slate-400">OR</div>
+                  <input name="videoUrl" placeholder="Paste Video URL (e.g., YouTube embed)" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
+                </div>
+
+                <textarea name="content" required placeholder="News Content..." rows="5" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600"></textarea>
+                <button 
+                  type="submit"
+                  disabled={isProcessing}
+                  className="bg-slate-900 text-white py-2 rounded font-bold hover:bg-slate-800 disabled:bg-slate-400"
+                >
+                  {isProcessing ? "Adding..." : "Publish News"}
+                </button>
+              </form>
             </div>
           </div>
         </div>

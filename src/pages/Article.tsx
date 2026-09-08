@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { hi } from "date-fns/locale";
 import { Share2, MessageCircle, Link2, ArrowLeft, Send } from "lucide-react";
 import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";
+import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 export default function Article() {
   const { id } = useParams<{ id: string }>();
@@ -22,30 +24,38 @@ export default function Article() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/news/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        setArticle(data);
-        setComments(data.comments || []);
-        if (data && data.category) {
-          return fetch(`/api/news?category=${data.category}&limit=5`);
+    const fetchArticle = async () => {
+      setLoading(true);
+      try {
+        if (!id) return;
+        const docRef = doc(db, "news", id);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = { id: docSnap.id, ...docSnap.data() } as NewsArticle;
+          setArticle(data);
+          setComments((data as any).comments || []);
+          
+          // Fetch related
+          const q = query(collection(db, "news"), where("category", "==", data.category), limit(5));
+          const relatedSnap = await getDocs(q);
+          const relatedArticles: NewsArticle[] = [];
+          relatedSnap.forEach(rDoc => {
+            if (rDoc.id !== id) {
+              relatedArticles.push({ id: rDoc.id, ...rDoc.data() } as NewsArticle);
+            }
+          });
+          setRelated(relatedArticles);
+        } else {
+          setArticle(null);
         }
-        return Promise.resolve(null);
-      })
-      .then(res => res ? res.json() : null)
-      .then(data => {
-        if (data && data.articles) {
-          setRelated(data.articles.filter((a: NewsArticle) => a.id !== id).slice(0, 4));
-        }
-        setLoading(false);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error(err);
+      } finally {
         setLoading(false);
-      });
-      
-    window.scrollTo(0, 0);
+      }
+    };
+    fetchArticle();
   }, [id]);
 
   if (loading) {
@@ -163,9 +173,19 @@ export default function Article() {
         </header>
 
         <figure className="mb-8">
-          {!article.featuredImage.includes('picsum') && (
+          
+          {article.videoUrl ? (
+            article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be') ? (
+              <div className="aspect-w-16 aspect-h-9 w-full rounded-xl overflow-hidden shadow-md">
+                <iframe src={article.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} className="w-full h-[400px] md:h-[500px]" allowFullScreen></iframe>
+              </div>
+            ) : (
+              <video src={article.videoUrl} controls className="w-full h-auto rounded-xl shadow-md max-h-[500px] bg-black" />
+            )
+          ) : !article.featuredImage.includes('picsum') && (
             <img src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
           )}
+
           <figcaption className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-right">{language === 'hi' ? 'स्रोत:' : 'Source:'} {article.sourceAttribution}</figcaption>
         </figure>
 
