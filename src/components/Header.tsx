@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { en: "UTTAR PRADESH", hi: "उत्तर प्रदेश", path: "/category/uttar-pradesh" },
   { en: "POLITICS", hi: "राजनीति", path: "/category/politics" },
   { en: "CRIME", hi: "क्राइम", path: "/category/crime" },
+  { en: "WEATHER", hi: "मौसम", path: "/category/weather" },
   { en: "BUSINESS", hi: "बिज़नेस", path: "/category/business" },
   { en: "SPORTS", hi: "खेल", path: "/category/sports" },
   { en: "ENTERTAINMENT", hi: "मनोरंजन", path: "/category/entertainment" },
@@ -21,7 +22,8 @@ const NAV_ITEMS = [
   { en: "HEALTH", hi: "स्वास्थ्य", path: "/category/health" },
   { en: "WORLD", hi: "दुनिया", path: "/category/world" },
   { en: "VIDEO NEWS", hi: "वीडियो", path: "/category/video-news" },
-  { en: "PHOTO GALLERY", hi: "फ़ोटो", path: "/category/photo-gallery" }
+  { en: "PHOTO GALLERY", hi: "फ़ोटो", path: "/category/photo-gallery" },
+  { en: "TEAM", hi: "हमारी टीम", path: "/team" }
 ];
 
 export default function Header() {
@@ -89,8 +91,8 @@ export default function Header() {
               (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
             }} />
             <div className="hidden flex-col">
-              <span className="text-2xl font-black tracking-tight text-white leading-none">LIVE UP 18</span>
-              <span className="text-sm font-bold tracking-widest text-red-600 leading-none">NEWS</span>
+              <span className="text-3xl font-black tracking-tight text-white leading-none [text-shadow:2px_2px_0_#475569,3px_3px_0_#1e293b,4px_4px_5px_rgba(0,0,0,0.8)]">LIVE UP 18</span>
+              <span className="text-xl font-black tracking-widest text-red-500 leading-none mt-1 [text-shadow:1px_1px_0_#7f1d1d,2px_2px_0_#450a0a,3px_3px_4px_rgba(0,0,0,0.8)]">NEWS</span>
             </div>
           </Link>
         </div>

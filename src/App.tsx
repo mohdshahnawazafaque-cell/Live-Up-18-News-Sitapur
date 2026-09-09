@@ -5,6 +5,7 @@ import Category from "./pages/Category";
 import Article from "./pages/Article";
 import Admin from "./pages/Admin";
 import Search from "./pages/Search";
+import Team from "./pages/Team";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
 

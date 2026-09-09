@@ -30,6 +30,7 @@ export default function AdBanner({ position, className = "" }: { position: strin
     fetchAd();
   }, [position]);
 
+  if (position === 'header_cover' && !ad) return null;
   if (ad) {
     return (
       <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className={`block w-full overflow-hidden rounded-xl shadow-sm ${className}`}>

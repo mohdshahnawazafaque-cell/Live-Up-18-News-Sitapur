@@ -213,7 +213,7 @@ export default function Admin() {
                     featuredImage: finalImageUrl,
                     videoUrl: finalVideoUrl || null,
                     publicationDate: new Date().toISOString(),
-                    author: "मो० शाहनवाज़",
+                    author: (form.reporter as HTMLInputElement).value || "मो० शाहनवाज़",
                     sourceAttribution: "LIVE UP 18 NEWS"
                   };
                   await addDoc(collection(db, "news"), newsItem);
@@ -233,10 +233,13 @@ export default function Admin() {
                   <option value="INDIA">India</option>
                   <option value="POLITICS">Politics</option>
                   <option value="CRIME">Crime</option>
+                  <option value="WEATHER">Weather (मौसम)</option>
                   <option value="BUSINESS">Business</option>
                   <option value="SPORTS">Sports</option>
                   <option value="ENTERTAINMENT">Entertainment</option>
                 </select>
+                
+                <input name="reporter" placeholder="रिपोर्टर का नाम (Reporter Name)" defaultValue="मो० शाहनवाज़" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
                 
                 <div className="flex flex-col gap-1 border border-slate-200 p-3 rounded bg-slate-50">
                   <label className="text-xs font-bold text-slate-700">Cover Image (Optional)</label>
@@ -264,6 +267,78 @@ export default function Admin() {
             </div>
           </div>
         
+
+          
+          {/* Team Manager */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden lg:col-span-2">
+            <div className="bg-green-700 text-white p-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Plus size={20} /> Add Team Member
+              </h2>
+            </div>
+            <div className="p-4">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setIsProcessing(true);
+                try {
+                  const form = e.target;
+                  const photoFile = form.photoFile.files?.[0];
+                  let finalPhotoUrl = form.photoUrl.value;
+
+                  if (photoFile) {
+                    try {
+                        const { signInAnonymously } = await import("firebase/auth");
+                        await signInAnonymously(auth);
+                        const imgRef = ref(storage, `team-photos/${Date.now()}-${photoFile.name}`);
+                        await uploadBytes(imgRef, photoFile);
+                        finalPhotoUrl = await getDownloadURL(imgRef);
+                    } catch(err) {
+                        console.error("Storage err", err);
+                    }
+                  }
+
+                  const member = {
+                    name: form.memberName.value,
+                    role: form.role.value,
+                    mobile: form.mobile.value,
+                    details: form.details.value,
+                    photoUrl: finalPhotoUrl || "",
+                    createdAt: new Date().toISOString()
+                  };
+                  await addDoc(collection(db, "team"), member);
+                  form.reset();
+                  alert("Team member added!");
+                } catch(err) {
+                  console.error(err);
+                  alert("Error adding team member: " + err.message);
+                } finally {
+                  setIsProcessing(false);
+                }
+              }} className="flex flex-col gap-3 max-w-xl">
+                <input name="memberName" required placeholder="Full Name (e.g. Mohd Shahnawaz)" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+                <input name="role" required placeholder="Role (e.g. Chief Editor, Cameraman, Reporter)" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+                <input name="mobile" required placeholder="Mobile Number" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+                
+                <div className="flex flex-col gap-1 border border-slate-200 p-3 rounded bg-slate-50">
+                  <label className="text-xs font-bold text-slate-700">Photo (File Upload)</label>
+                  <input name="photoFile" type="file" accept="image/*" className="text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+                  <div className="text-center text-xs text-slate-400">OR</div>
+                  <input name="photoUrl" placeholder="Paste Photo URL" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
+                </div>
+
+                <textarea name="details" placeholder="Short description, area of coverage, or bio..." rows="3" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600"></textarea>
+
+                <button 
+                  type="submit"
+                  disabled={isProcessing}
+                  className="bg-green-700 text-white py-2 rounded font-bold hover:bg-green-800 disabled:bg-slate-400"
+                >
+                  {isProcessing ? "Adding..." : "Add Member"}
+                </button>
+              </form>
+            </div>
+          </div>
+
 
           {/* Advertisement Manager */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -311,6 +386,7 @@ export default function Admin() {
                 <select name="adPosition" required className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-600">
                   <option value="home_top">Home Page (Top)</option>
                   <option value="home_middle">Home Page (Middle)</option>
+                  <option value="header_cover">Header Cover Image (Top)</option>
                   <option value="article_sidebar">Article Page (Sidebar)</option>
                 </select>
                 

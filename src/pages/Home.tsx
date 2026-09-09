@@ -223,7 +223,8 @@ export default function Home() {
                   (catName === 'INDIA' ? 'भारत' : 
                    catName === 'UTTAR PRADESH' ? 'उत्तर प्रदेश' : 
                    catName === 'POLITICS' ? 'राजनीति' : 
-                   catName === 'CRIME' ? 'क्राइम' : 
+                   catName === 'CRIME' ? 'क्राइम' :
+                   catName === 'WEATHER' ? 'मौसम' : 
                    catName === 'SPORTS' ? 'खेल' : 
                    catName === 'ENTERTAINMENT' ? 'मनोरंजन' : catName) 
                   : catName}

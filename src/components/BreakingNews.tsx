@@ -10,45 +10,26 @@ export default function BreakingNews() {
   const [breakingNews, setBreakingNews] = useState<NewsArticle[]>([]);
   const [enabled, setEnabled] = useState(true);
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(5));
-        const snap = await getDocs(q);
-        const articles: NewsArticle[] = [];
-        snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
-        setBreakingNews(articles);
-        // hardcode breaking enabled to true for simplicity
-        setEnabled(true);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchNews();
-  }, []);
+  
 
   if (!enabled || breakingNews.length === 0) return null;
 
+  
   return (
     <div className="bg-white border-b border-slate-200 py-2">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
-        <div className="bg-red-600 text-white font-bold text-xs uppercase px-3 py-1 mr-4 animate-pulse whitespace-nowrap flex-shrink-0 relative overflow-hidden">
-          {language === 'hi' ? 'ब्रेकिंग न्यूज़' : 'BREAKING NEWS'}
-          <div className="absolute inset-0 w-full h-full bg-white/20 -skew-x-12 translate-x-full animate-[shimmer_2s_infinite]"></div>
+        <div className="bg-red-600 text-white font-bold text-xs uppercase px-3 py-1 mr-4 whitespace-nowrap flex-shrink-0 relative overflow-hidden">
+          {language === 'hi' ? 'सूचना' : 'NOTICE'}
         </div>
         <div className="overflow-hidden whitespace-nowrap flex-1 relative flex items-center">
-          <div className="animate-[marquee_20s_linear_infinite] hover:pause inline-block">
-            {breakingNews.map((news, idx) => (
-              <span key={news.id} className="mx-8">
-                <Link to={`/article/${news.id}`} className="text-slate-800 font-semibold hover:text-red-600 transition-colors">
-                  {getLocalizedText(news, 'headline', language)}
-                </Link>
-                {idx < breakingNews.length - 1 && <span className="text-slate-300 ml-8">|</span>}
-              </span>
-            ))}
+          <div className="animate-[marquee_40s_linear_infinite] hover:pause inline-block">
+            <span className="mx-8 text-slate-800 font-bold">
+              विज्ञापन एवं समाचार के लिए संपर्क करें | अपने प्रतिष्ठान, व्यवसाय या सेवा का प्रचार करवाने अथवा अपने क्षेत्र की महत्वपूर्ण खबर हम तक पहुँचाने के लिए संपर्क करें। Live UP 18 News | संपर्क सूत्र: 9956078419
+            </span>
           </div>
         </div>
       </div>
     </div>
   );
+
 }

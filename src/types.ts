@@ -43,3 +43,13 @@ export interface Advertisement {
   active: boolean;
   createdAt: string;
 }
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  mobile: string;
+  details: string;
+  photoUrl: string;
+  createdAt: string;
+}
