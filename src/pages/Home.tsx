@@ -1,3 +1,4 @@
+import YouTubeGallery from "../components/YouTubeGallery";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NewsArticle } from "../types";
@@ -80,7 +81,8 @@ export default function Home() {
             LIVE TV
           </h2>
         </div>
-        <div className="aspect-video w-full bg-black flex items-center justify-center relative">
+        <div className="w-full bg-black flex items-center justify-center relative">
+          <div className="w-full max-w-4xl mx-auto aspect-video">
           <iframe 
             width="100%" 
             height="100%" 
@@ -91,6 +93,7 @@ export default function Home() {
             allowFullScreen
             className="absolute inset-0"
           ></iframe>
+          </div>
         </div>
       </section>
 
@@ -176,65 +179,7 @@ export default function Home() {
         </div>
       </section>
 
-            {/* Video News Section */}
-      <section className="bg-slate-900 dark:bg-black rounded-xl p-6 text-white my-8 border border-slate-800">
-        <div className="flex items-center justify-between border-b-2 border-red-600 mb-6 pb-2">
-          <h3 className="text-2xl font-black uppercase flex items-center gap-2">
-            <span className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
-            {language === 'hi' ? 'वीडियो न्यूज़ गैलरी' : 'Video News Gallery'}
-          </h3>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {videos.length > 0 ? (
-            <>
-              {/* Main Video */}
-              <div className="lg:col-span-2">
-                <div className="aspect-video bg-black rounded-lg overflow-hidden border border-slate-700">
-                  <iframe 
-                    width="100%" 
-                    height="100%" 
-                    src={getEmbedUrl(videos[0].url)} 
-                    title={language === 'hi' ? videos[0].title : videos[0].titleEn} 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowFullScreen
-                  ></iframe>
-                </div>
-                <h4 className="font-bold text-xl mt-4 line-clamp-2">
-                  {language === 'hi' ? videos[0].title : videos[0].titleEn}
-                </h4>
-              </div>
-              {/* Sidebar Videos */}
-              <div className="flex flex-col gap-4">
-                {videos.slice(1).map((vid, idx) => (
-                  <div key={idx} className="flex gap-4 group cursor-pointer">
-                    <div className="w-32 aspect-video bg-slate-800 rounded-md overflow-hidden flex-shrink-0 relative">
-                      <iframe 
-                        width="100%" 
-                        height="100%" 
-                        src={getEmbedUrl(vid.url)} 
-                        title={language === 'hi' ? vid.title : vid.titleEn} 
-                        frameBorder="0"
-                        className="pointer-events-none"
-                      ></iframe>
-                      <div className="absolute inset-0 bg-transparent"></div> {/* Overlay to prevent clicking iframe */}
-                    </div>
-                    <div>
-                      <h5 className="font-bold text-sm group-hover:text-red-400 transition-colors line-clamp-3">
-                        {language === 'hi' ? vid.title : vid.titleEn}
-                      </h5>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-             <div className="col-span-full py-12 text-center text-slate-400">
-               {language === 'hi' ? 'ताज़ा वीडियो लोड हो रहे हैं...' : 'Loading latest videos...'}
-             </div>
-          )}
-        </div>
-      </section>
+            <YouTubeGallery />
 
       {/* Middle Ad/Banner Section */}
       <section className="w-full my-8">

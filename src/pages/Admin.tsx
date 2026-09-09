@@ -213,6 +213,7 @@ export default function Admin() {
                     content: (form.content as HTMLTextAreaElement).value,
                     featuredImage: finalImageUrl,
                     videoUrl: finalVideoUrl ? getEmbedUrl(finalVideoUrl) : null,
+                    isBreaking: (form.isBreaking as HTMLInputElement).checked,
                     publicationDate: new Date().toISOString(),
                     author: (form.reporter as HTMLInputElement).value || "मो० शाहनवाज़",
                     sourceAttribution: "LIVE UP 18 NEWS"
@@ -229,6 +230,7 @@ export default function Admin() {
                 }
               }} className="flex flex-col gap-3">
                 <input name="headline" required placeholder="Headline" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-700"><input type="checkbox" name="isBreaking" className="w-4 h-4 accent-red-600" /> Mark as Breaking News (Ticker)</label>
                 <select name="category" required className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600">
                   <option value="UTTAR PRADESH">Uttar Pradesh</option>
                   <option value="INDIA">India</option>
@@ -497,7 +499,28 @@ export default function Admin() {
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
                         {new Date(article.publicationDate).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+                        {article.videoUrl && (
+                          <button 
+                            onClick={async () => {
+                              if (window.confirm('Remove YouTube video from this news?')) {
+                                try {
+                                  const { doc, updateDoc } = await import("firebase/firestore");
+                                  await updateDoc(doc(db, "news", article.id), { videoUrl: null });
+                                  alert("Video removed successfully");
+                                  window.location.reload();
+                                } catch (e) {
+                                  console.error(e);
+                                  alert("Error removing video");
+                                }
+                              }
+                            }}
+                            className="text-slate-400 hover:text-orange-500 p-1 transition-colors"
+                            title="Remove Video Link"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path><line x1="3" y1="3" x2="21" y2="21"></line></svg>
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleDeleteNews(article.id)}
                           className="text-slate-400 hover:text-red-600 p-1 transition-colors"

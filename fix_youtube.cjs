@@ -1,39 +1,47 @@
 const fs = require('fs');
+let yt = fs.readFileSync('src/components/YouTubeGallery.tsx', 'utf8');
 
-// Create a robust youtube parser helper
-const helperCode = `
-export function getEmbedUrl(url: string | undefined): string {
-  if (!url) return '';
-  const regExp = /^.*(youtu.be\\/|v\\/|u\\/\\w\\/|embed\\/|watch\\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  if (match && match[2].length === 11) {
-    return 'https://www.youtube.com/embed/' + match[2];
-  }
-  return url;
-}
-`;
+// Replace the playlist logic with a dynamic player
+yt = yt.replace(
+  'const [loading, setLoading] = useState(true);',
+  'const [loading, setLoading] = useState(true);\n  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);\n  const topRef = useRef<HTMLDivElement>(null);'
+);
 
-fs.writeFileSync('src/lib/youtube.ts', helperCode);
+yt = yt.replace(
+  'import { useEffect, useState } from \'react\';',
+  'import { useEffect, useState, useRef } from \'react\';'
+);
 
-// 1. Update Home.tsx
-let home = fs.readFileSync('src/pages/Home.tsx', 'utf8');
-home = home.replace('import { useLanguage, getLocalizedText } from \'../context/LanguageContext\';', 'import { useLanguage, getLocalizedText } from \'../context/LanguageContext\';\nimport { getEmbedUrl } from \'../lib/youtube\';');
-home = home.replace(/src=\{videos\[0\].url\}/g, 'src={getEmbedUrl(videos[0].url)}');
-home = home.replace(/src=\{vid.url\}/g, 'src={getEmbedUrl(vid.url)}');
-fs.writeFileSync('src/pages/Home.tsx', home);
+// Update iframe src logic
+yt = yt.replace(
+  'src={`https://www.youtube.com/embed/videoseries?list=UURTXiJsiEqYUdWzzA6RQAEQ`}',
+  'src={currentVideoId ? `https://www.youtube.com/embed/${currentVideoId}?autoplay=1` : `https://www.youtube.com/embed/videoseries?list=UURTXiJsiEqYUdWzzA6RQAEQ`}'
+);
 
-// 2. Update Article.tsx
-let article = fs.readFileSync('src/pages/Article.tsx', 'utf8');
-article = article.replace('import { useLanguage, getLocalizedText } from \'../context/LanguageContext\';', 'import { useLanguage, getLocalizedText } from \'../context/LanguageContext\';\nimport { getEmbedUrl } from \'../lib/youtube\';');
-// Replace the inline replace logic
-const inlineLogic = `article.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')`;
-article = article.replace(inlineLogic, 'getEmbedUrl(article.videoUrl)');
-fs.writeFileSync('src/pages/Article.tsx', article);
+// Add topRef to the player container
+yt = yt.replace(
+  '<div className="mb-8 bg-black rounded-xl overflow-hidden border border-slate-700 w-full">',
+  '<div className="mb-8 bg-black rounded-xl overflow-hidden border border-slate-700 w-full" ref={topRef}>'
+);
 
-// 3. Update Admin.tsx so it also saves cleanly just in case
-let admin = fs.readFileSync('src/pages/Admin.tsx', 'utf8');
-admin = admin.replace('import { NewsArticle } from "../types";', 'import { NewsArticle } from "../types";\nimport { getEmbedUrl } from "../lib/youtube";');
-admin = admin.replace('videoUrl: finalVideoUrl || null,', 'videoUrl: finalVideoUrl ? getEmbedUrl(finalVideoUrl) : null,');
-fs.writeFileSync('src/pages/Admin.tsx', admin);
+// Update the grid items to play inline
+yt = yt.replace(
+  /<a href={vid\.link} target="_blank" rel="noopener noreferrer" className="relative aspect-video block overflow-hidden">/g,
+  '<button onClick={() => { setCurrentVideoId(videoId); topRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); }} className="relative aspect-video block w-full overflow-hidden text-left focus:outline-none">'
+);
+yt = yt.replace(
+  /<\/a>\s*<div className="p-4 flex flex-col flex-1">/g,
+  '</button>\n              <div className="p-4 flex flex-col flex-1">'
+);
 
-console.log("YouTube parsing logic added!");
+// Also update the title link to play inline
+yt = yt.replace(
+  /<a href={vid\.link} target="_blank" rel="noopener noreferrer" className="font-bold text-sm leading-snug line-clamp-3 hover:text-red-400 mb-2">/g,
+  '<button onClick={() => { setCurrentVideoId(videoId); topRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); }} className="font-bold text-sm leading-snug line-clamp-3 hover:text-red-400 mb-2 text-left">'
+);
+yt = yt.replace(
+  /\{vid\.title\}\s*<\/a>/g,
+  '{vid.title}\n                </button>'
+);
+
+fs.writeFileSync('src/components/YouTubeGallery.tsx', yt);

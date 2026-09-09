@@ -1,4 +1,9 @@
 const fs = require('fs');
-let content = fs.readFileSync('src/types.ts', 'utf8');
-content = content.replace('isBreaking?: boolean;', 'isBreaking?: boolean;\n  videoUrl?: string;');
-fs.writeFileSync('src/types.ts', content);
+let types = fs.readFileSync('src/types.ts', 'utf8');
+if (!types.includes('isBreaking')) {
+  types = types.replace(
+    'videoUrl?: string;',
+    'videoUrl?: string;\n  isBreaking?: boolean;'
+  );
+  fs.writeFileSync('src/types.ts', types);
+}

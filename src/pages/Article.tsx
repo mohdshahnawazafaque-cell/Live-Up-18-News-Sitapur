@@ -1,7 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { NewsArticle } from "../types";
+import { NewsArticle, TeamMember } from "../types";
 import { format } from "date-fns";
 import { hi } from "date-fns/locale";
 import { Share2, MessageCircle, Link2, ArrowLeft, Send } from "lucide-react";
@@ -17,6 +17,8 @@ export default function Article() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [article, setArticle] = useState<NewsArticle | null>(null);
+  const [reporter, setReporter] = useState<TeamMember | null>(null);
+  const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [related, setRelated] = useState<NewsArticle[]>([]);
   
@@ -130,6 +132,7 @@ ${url}`;
   };
 
   return (
+    <>
     <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
       
       <article className="lg:col-span-8">
@@ -311,7 +314,10 @@ ${url}`;
           </div>
         </div>
       </aside>
-
     </div>
+    <div className="mt-12 w-full max-w-7xl mx-auto border-t border-slate-200 dark:border-slate-800 pt-8">
+      <YouTubeGallery />
+    </div>
+    </>
   );
 }
