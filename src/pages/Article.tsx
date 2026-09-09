@@ -11,6 +11,7 @@ import ShareButtons from "../components/ShareButtons";
 import Comments from "../components/Comments";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import YouTubeGallery from "../components/YouTubeGallery";
 
 export default function Article() {
   const { id } = useParams<{ id: string }>();

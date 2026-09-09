@@ -44,7 +44,7 @@ export default function BreakingNews() {
       
       <div className="flex-1 h-full relative text-white flex items-center overflow-hidden">
         {/* We use a wide container and CSS animation to scroll right to left */}
-        <div className="whitespace-nowrap animate-marquee hover:pause flex items-center pl-[100%]">
+        <div className="whitespace-nowrap animate-marquee hover:pause flex items-center ">
           
           <span className="font-bold text-yellow-400 flex items-center gap-2 mx-8 text-sm md:text-base">
             <span className="text-red-500 text-xl">•</span>
