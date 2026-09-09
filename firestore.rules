@@ -7,6 +7,18 @@ service cloud.firestore {
     match /ads/{adId} {
       allow read, write: if true;
     }
+    match /comments/{commentId} {
+      allow read, write: if true;
+    }
+    match /epapers/{epaperId} {
+      allow read, write: if true;
+    }
+    match /polls/{pollId} {
+      allow read, write: if true;
+    }
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
     match /team/{memberId} {
       allow read, write: if true;
     }

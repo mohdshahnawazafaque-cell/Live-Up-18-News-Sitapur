@@ -53,3 +53,38 @@ export interface TeamMember {
   photoUrl: string;
   createdAt: string;
 }
+export interface Comment {
+  id: string;
+  articleId: string;
+  text: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface EPaper {
+  id: string;
+  title: string;
+  date: string;
+  pdfUrl: string;
+  thumbnailUrl: string;
+  createdAt: string;
+}
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  options: PollOption[];
+  active: boolean;
+  createdAt: string;
+}
+
+export interface SiteConfig {
+  id: string;
+  liveTvUrl: string;
+}

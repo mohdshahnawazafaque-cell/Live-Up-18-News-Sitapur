@@ -7,6 +7,8 @@ import { hi } from "date-fns/locale";
 import { Share2, MessageCircle, Link2, ArrowLeft, Send } from "lucide-react";
 import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";
 import AdBanner from "../components/AdBanner";
+import ShareButtons from "../components/ShareButtons";
+import Comments from "../components/Comments";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -187,7 +189,7 @@ ${url}`;
           {article.videoUrl ? (
             article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be') ? (
               <div className="aspect-w-16 aspect-h-9 w-full rounded-xl overflow-hidden shadow-md">
-                <iframe src={article.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} className="w-full h-[400px] md:h-[500px]" allowFullScreen></iframe>
+                <iframe src={getEmbedUrl(article.videoUrl)} className="w-full h-[400px] md:h-[500px]" allowFullScreen></iframe>
               </div>
             ) : (
               <video src={article.videoUrl} controls className="w-full h-auto rounded-xl shadow-md max-h-[500px] bg-black" />

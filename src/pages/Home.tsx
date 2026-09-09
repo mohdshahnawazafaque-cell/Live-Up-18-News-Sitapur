@@ -4,6 +4,8 @@ import { NewsArticle } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
 import AdBanner from "../components/AdBanner";
+import PollWidget from "../components/PollWidget";
+import TrendingWidget from "../components/TrendingWidget";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -69,6 +71,29 @@ export default function Home() {
         </a>
       </section>
 
+      
+      {/* Live TV Section (Placeholder / Configurable) */}
+      <section className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800">
+        <div className="bg-red-600 text-white p-3 flex justify-between items-center">
+          <h2 className="text-xl font-black uppercase flex items-center gap-2">
+            <span className="w-3 h-3 bg-white rounded-full animate-pulse"></span>
+            LIVE TV
+          </h2>
+        </div>
+        <div className="aspect-video w-full bg-black flex items-center justify-center relative">
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src="https://www.youtube.com/embed/lHRd4ug_Yq8"
+            title="YouTube video player" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+            className="absolute inset-0"
+          ></iframe>
+        </div>
+      </section>
+
       {/* Featured Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Featured */}
@@ -96,27 +121,32 @@ export default function Home() {
         </div>
 
         {/* Top Headlines Sidebar */}
-        <div className="lg:col-span-4 flex flex-col bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div className="bg-slate-900 text-white p-4">
-            <h3 className="text-xl font-black uppercase flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-              {language === 'hi' ? 'प्रमुख खबरें' : 'Top Headlines'}
-            </h3>
-          </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-700 flex-1 flex flex-col">
-            {topHeadlines.map(news => (
-              <Link key={news.id} to={`/article/${news.id}`} className="p-4 group hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex-1 flex flex-col justify-center">
-                <span className="text-red-600 text-xs font-bold uppercase mb-1 block">
-                  {news.category}
-                </span>
-                <h4 className="text-slate-900 dark:text-white font-bold text-lg leading-snug group-hover:text-red-700 transition-colors line-clamp-3">
-                  {getLocalizedText(news, 'headline', language)}
-                </h4>
-                <div className="text-slate-500 dark:text-slate-400 text-xs mt-2">
-                  {formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true })}
-                </div>
-              </Link>
-            ))}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <PollWidget />
+          <TrendingWidget />
+          
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+            <div className="bg-slate-900 text-white p-4">
+              <h3 className="text-xl font-black uppercase flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+                {language === 'hi' ? 'प्रमुख खबरें' : 'Top Headlines'}
+              </h3>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-700 flex-1 flex flex-col">
+              {topHeadlines.map(news => (
+                <Link key={news.id} to={`/article/${news.id}`} className="p-4 group hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex-1 flex flex-col justify-center">
+                  <span className="text-red-600 text-xs font-bold uppercase mb-1 block">
+                    {news.category}
+                  </span>
+                  <h4 className="text-slate-900 dark:text-white font-bold text-lg leading-snug group-hover:text-red-700 transition-colors line-clamp-3">
+                    {getLocalizedText(news, 'headline', language)}
+                  </h4>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs mt-2">
+                    {formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true })}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -163,7 +193,7 @@ export default function Home() {
                   <iframe 
                     width="100%" 
                     height="100%" 
-                    src={videos[0].url} 
+                    src={getEmbedUrl(videos[0].url)} 
                     title={language === 'hi' ? videos[0].title : videos[0].titleEn} 
                     frameBorder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -182,7 +212,7 @@ export default function Home() {
                       <iframe 
                         width="100%" 
                         height="100%" 
-                        src={vid.url} 
+                        src={getEmbedUrl(vid.url)} 
                         title={language === 'hi' ? vid.title : vid.titleEn} 
                         frameBorder="0"
                         className="pointer-events-none"

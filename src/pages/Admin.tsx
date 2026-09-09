@@ -2,8 +2,9 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper } from "lucide-react";
 import { NewsArticle } from "../types";
+import { getEmbedUrl } from "../lib/youtube";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
-import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, addDoc, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, addDoc, setDoc, updateDoc, where } from "firebase/firestore";
 import { db, storage, auth } from "../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { signInAnonymously } from "firebase/auth";
@@ -211,7 +212,7 @@ export default function Admin() {
                     category: (form.category as HTMLSelectElement).value,
                     content: (form.content as HTMLTextAreaElement).value,
                     featuredImage: finalImageUrl,
-                    videoUrl: finalVideoUrl || null,
+                    videoUrl: finalVideoUrl ? getEmbedUrl(finalVideoUrl) : null,
                     publicationDate: new Date().toISOString(),
                     author: (form.reporter as HTMLInputElement).value || "मो० शाहनवाज़",
                     sourceAttribution: "LIVE UP 18 NEWS"
@@ -269,6 +270,58 @@ export default function Admin() {
         
 
           
+          
+          {/* Poll Manager */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden lg:col-span-2">
+            <div className="bg-orange-600 text-white p-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Plus size={20} /> Add Public Poll
+              </h2>
+            </div>
+            <div className="p-4">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setIsProcessing(true);
+                try {
+                  const form = e.target;
+                  const poll = {
+                    question: form.question.value,
+                    options: [
+                      { id: "opt1", text: form.opt1.value, votes: 0 },
+                      { id: "opt2", text: form.opt2.value, votes: 0 }
+                    ],
+                    active: true,
+                    createdAt: new Date().toISOString()
+                  };
+                  
+                  // Optional: Deactivate old polls
+                  const q = query(collection(db, "polls"), where("active", "==", true));
+                  const snap = await getDocs(q);
+                  snap.forEach(async (d) => {
+                    await updateDoc(doc(db, "polls", d.id), { active: false });
+                  });
+
+                  await addDoc(collection(db, "polls"), poll);
+                  form.reset();
+                  alert("Poll added and activated!");
+                } catch(err) {
+                  console.error(err);
+                  alert("Error: " + err.message);
+                } finally {
+                  setIsProcessing(false);
+                }
+              }} className="flex flex-col gap-3 max-w-xl">
+                <input name="question" required placeholder="Poll Question (e.g. Will it rain today?)" className="border border-slate-300 rounded px-3 py-2" />
+                <input name="opt1" required placeholder="Option 1 (e.g. Yes)" className="border border-slate-300 rounded px-3 py-2" />
+                <input name="opt2" required placeholder="Option 2 (e.g. No)" className="border border-slate-300 rounded px-3 py-2" />
+                <button type="submit" disabled={isProcessing} className="bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 disabled:bg-slate-400">
+                  {isProcessing ? "Adding..." : "Create Poll"}
+                </button>
+              </form>
+            </div>
+          </div>
+
+
           {/* Team Manager */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden lg:col-span-2">
             <div className="bg-green-700 text-white p-4">

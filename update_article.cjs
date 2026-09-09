@@ -2,76 +2,41 @@ const fs = require('fs');
 
 let content = fs.readFileSync('src/pages/Article.tsx', 'utf8');
 
-content = content.replace(
-  'import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";',
-  `import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";\nimport { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";\nimport { db } from "../lib/firebase";`
-);
+// Imports
+if (!content.includes('ShareButtons')) {
+  content = content.replace(
+    'import AdBanner from "../components/AdBanner";',
+    'import AdBanner from "../components/AdBanner";\nimport ShareButtons from "../components/ShareButtons";\nimport Comments from "../components/Comments";'
+  );
+}
 
-const oldEffect = /useEffect\(\(\) => \{[\s\S]*?\}, \[id\]\);/;
-const newEffect = `useEffect(() => {
-    const fetchArticle = async () => {
-      setLoading(true);
-      try {
-        if (!id) return;
-        const docRef = doc(db, "news", id);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() } as NewsArticle;
-          setArticle(data);
-          setComments((data as any).comments || []);
+// Add share buttons below article title
+if (!content.includes('<ShareButtons')) {
+  content = content.replace(
+    '<div className="flex items-center gap-4 text-slate-500 text-sm font-semibold mb-6">',
+    `<ShareButtons url={window.location.href} title={getLocalizedText(article, 'headline', language)} />
+          <div className="flex items-center gap-4 text-slate-500 text-sm font-semibold mb-6">`
+  );
+}
+
+// Add comments below article content
+if (!content.includes('<Comments')) {
+  content = content.replace(
+    '{/* Sidebar Ads */}',
+    `<Comments articleId={article.id} />
+          </div>
           
-          // Fetch related
-          const q = query(collection(db, "news"), where("category", "==", data.category), limit(5));
-          const relatedSnap = await getDocs(q);
-          const relatedArticles: NewsArticle[] = [];
-          relatedSnap.forEach(rDoc => {
-            if (rDoc.id !== id) {
-              relatedArticles.push({ id: rDoc.id, ...rDoc.data() } as NewsArticle);
-            }
-          });
-          setRelated(relatedArticles);
-        } else {
-          setArticle(null);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchArticle();
-  }, [id]);`;
+          {/* Sidebar Ads */}`
+  );
+  
+  // Actually, let's just insert it before the closing div of the main article content.
+  // We'll replace the exact string from where the content ends.
+  content = content.replace(
+    '</article>\n        </div>\n\n        {/* Sidebar Ads */}',
+    '</article>\n          <Comments articleId={article.id} />\n        </div>\n\n        {/* Sidebar Ads */}'
+  );
+}
 
-content = content.replace(oldEffect, newEffect);
-
-const oldComment = /const handleAddComment = async \(e: React\.FormEvent\) => \{[\s\S]*?setNewCommentText\(""\);\n      \}\n    \} catch \(err\) \{\n      console\.error\("Error adding comment:", err\);\n    \} finally \{\n      setIsSubmitting\(false\);\n    \}\n  \};/;
-const newComment = `const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCommentName.trim() || !newCommentText.trim() || !id) return;
-    setIsSubmitting(true);
-    try {
-      const docRef = doc(db, "news", id);
-      const newCommentObj = {
-        id: Math.random().toString(36).substring(7),
-        name: newCommentName,
-        text: newCommentText,
-        date: new Date().toISOString()
-      };
-      await updateDoc(docRef, {
-        comments: arrayUnion(newCommentObj)
-      });
-      setComments([...comments, newCommentObj]);
-      setNewCommentName("");
-      setNewCommentText("");
-    } catch (err) {
-      console.error("Error adding comment:", err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };`;
-
-content = content.replace(oldComment, newComment);
+// We also need to increment views. Wait, incrementing views causes writes on every load. Given the quota limits, maybe let's just do an occasional trending simulation or read views. Let's skip auto-incrementing views to save Firebase quota for this free project, and just randomize trending or pick top 5 recently updated. The prompt mentions the quota was exhausted. I'll stick to a static Trending list or randomly picked.
 
 fs.writeFileSync('src/pages/Article.tsx', content);
-console.log("Updated Article.tsx");
