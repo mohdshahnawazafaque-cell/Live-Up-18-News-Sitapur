@@ -112,23 +112,28 @@ ${url}`;
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommentName.trim() || !newCommentText.trim()) return;
+    if (!newCommentName.trim() || !newCommentText.trim() || !id) return;
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/news/${id}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCommentName, text: newCommentText })
+      const newComment = {
+         id: Date.now().toString(),
+         name: newCommentName,
+         text: newCommentText,
+         date: new Date().toISOString()
+      };
+      const docRef = doc(db, "news", id);
+      await updateDoc(docRef, {
+         comments: arrayUnion(newComment)
       });
-      const data = await res.json();
-      if (data.success) {
-        setComments(data.comments);
-        setNewCommentName("");
-        setNewCommentText("");
-      }
+      
+      setComments([...comments, newComment]);
+      setNewCommentName("");
+      setNewCommentText("");
+      sessionStorage.clear(); // Clear cache to reflect comment globally if needed
     } catch (err) {
       console.error(err);
+      alert(language === 'hi' ? 'टिप्पणी जोड़ने में त्रुटि हुई' : 'Error posting comment');
     } finally {
       setIsSubmitting(false);
     }

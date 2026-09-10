@@ -139,6 +139,7 @@ export default function Admin() {
       };
 
       await updateDoc(doc(db, "news", editingArticle.id), updatedNewsItem);
+      sessionStorage.clear(); // Clear cache so updated news appears immediately
       
       setEditingArticle(null);
       await fetchData();
@@ -169,6 +170,7 @@ export default function Admin() {
     if(!confirm("Are you sure you want to delete this news?")) return;
     try {
       await deleteDoc(doc(db, "news", id));
+        sessionStorage.clear();
       fetchData();
     } catch (err) {
       console.error(err);
@@ -276,6 +278,7 @@ export default function Admin() {
                     sourceAttribution: "LIVE UP 18 NEWS"
                   };
                   await addDoc(collection(db, "news"), newsItem);
+      sessionStorage.clear(); // Clear cache so new news appears immediately
                   form.reset();
                   fetchData();
                   alert("News Added!");
@@ -651,6 +654,7 @@ export default function Admin() {
                                 try {
                                   const { doc, updateDoc } = await import("firebase/firestore");
                                   await updateDoc(doc(db, "news", article.id), { videoUrl: null });
+                                  sessionStorage.clear();
                                   alert("Video removed successfully");
                                   window.location.reload();
                                 } catch (e) {

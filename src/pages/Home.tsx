@@ -24,7 +24,7 @@ export default function Home() {
 
     const fetchNews = async () => {
       try {
-        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(25));
+        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(100));
         const articles = await getCachedDocs(q, 'home-news');
 
         
