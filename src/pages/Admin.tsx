@@ -1,7 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper, Edit, X, MonitorPlay, BarChart2 } from "lucide-react";
+import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper, Edit, X, MonitorPlay, BarChart2, Heart, Download, Printer, CheckCircle } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { NewsArticle } from "../types";
 import { getEmbedUrl } from "../lib/youtube";
@@ -25,8 +27,97 @@ export default function Admin() {
   const [newSource, setNewSource] = useState("");
   const [liveUrl, setLiveUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  const [donations, setDonations] = useState<any[]>([]);
+  const [totalDonations, setTotalDonations] = useState(0);
+  const [successfulDonationsCount, setSuccessfulDonationsCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
+  
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [editingDonationId, setEditingDonationId] = useState<string | null>(null);
+  const [donationForm, setDonationForm] = useState({
+    donorName: "",
+    mobile: "",
+    amount: "",
+    paymentRef: "",
+    status: "successful",
+  });
+
+  const handleOpenDonationModal = (donation?: any) => {
+    if (donation) {
+      setEditingDonationId(donation.id);
+      setDonationForm({
+        donorName: donation.donorName || "",
+        mobile: donation.mobile || "",
+        amount: String(donation.amount || ""),
+        paymentRef: donation.paymentRef || "",
+        status: donation.status || "successful",
+      });
+    } else {
+      setEditingDonationId(null);
+      setDonationForm({
+        donorName: "",
+        mobile: "",
+        amount: "",
+        paymentRef: "",
+        status: "successful",
+      });
+    }
+    setIsDonationModalOpen(true);
+  };
+
+  const handleSaveDonation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    try {
+      if (editingDonationId) {
+        await updateDoc(doc(db, "donations", editingDonationId), {
+          donorName: donationForm.donorName,
+          mobile: donationForm.mobile,
+          amount: Number(donationForm.amount),
+          paymentRef: donationForm.paymentRef,
+          status: donationForm.status,
+        });
+        alert("Donation updated successfully");
+      } else {
+        const prefix = 'L18-DON';
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const receiptNumber = `${prefix}-${timestamp}-${random}`;
+        
+        await addDoc(collection(db, "donations"), {
+          receiptNumber: receiptNumber,
+          donorName: donationForm.donorName,
+          mobile: donationForm.mobile,
+          email: "",
+          amount: Number(donationForm.amount),
+          message: "Added by Admin",
+          status: donationForm.status,
+          paymentRef: donationForm.paymentRef || "MANUAL_ENTRY",
+          createdAt: new Date(),
+        });
+        alert("Donation receipt created successfully");
+      }
+      setIsDonationModalOpen(false);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving donation");
+    }
+    setIsProcessing(false);
+  };
+
+  const handleDeleteDonation = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this donation receipt?")) return;
+    try {
+      await deleteDoc(doc(db, "donations", id));
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting donation");
+    }
+  };
+
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -285,7 +376,134 @@ export default function Admin() {
         <p className="text-xs text-slate-500 mt-2">Set this URL to show the "Live TV" frame on the website. Leave empty to hide it.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      {/* Donations Management Section */}
+      <section className="mb-12">
+        <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+          <Heart size={24} className="text-red-600" fill="currentColor" /> 
+          Donations Management
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="text-sm text-red-600 font-bold mb-1">Total Successful Donations</div>
+            <div className="text-2xl font-black text-red-700">₹{totalDonations}</div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div className="text-sm text-slate-500 font-bold mb-1">Successful Transactions</div>
+            <div className="text-2xl font-black text-slate-800">{successfulDonationsCount}</div>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div className="text-sm text-slate-500 font-bold mb-1">Total Attempts</div>
+            <div className="text-2xl font-black text-slate-800">{donations.length}</div>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-slate-200 rounded-xl overflow-hidden mb-8">
+          <div className="p-4 border-b-2 border-slate-200 bg-slate-50 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 w-full">
+              <input 
+                type="text" 
+                placeholder="Search by name, phone, or receipt number..." 
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-red-600"
+                value={donationSearch}
+                onChange={(e) => setDonationSearch(e.target.value)}
+              />
+            </div>
+            <div className="w-full md:w-48">
+              <select 
+                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-red-600"
+                value={donationStatusFilter}
+                onChange={(e) => setDonationStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="successful">Successful</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-50 border-b-2 border-slate-200 text-slate-800 font-bold">
+                <tr>
+                  <th className="p-4">Date & Time</th>
+                  <th className="p-4">Donor Name & Contact</th>
+                  <th className="p-4">Amount</th>
+                  <th className="p-4">Receipt / Ref No.</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredDonations.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-slate-500">No donations found matching your search.</td>
+                  </tr>
+                ) : (
+                  filteredDonations.map(donation => (
+                    <tr key={donation.id} className="hover:bg-slate-50">
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-900">
+                          {donation.createdAt?.toDate ? new Date(donation.createdAt.toDate()).toLocaleDateString() : 'N/A'}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {donation.createdAt?.toDate ? new Date(donation.createdAt.toDate()).toLocaleTimeString() : ''}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-bold text-slate-900">{donation.donorName}</div>
+                        <div className="text-xs">{donation.mobile}</div>
+                        <div className="text-xs text-slate-500">{donation.email}</div>
+                      </td>
+                      <td className="p-4 font-black text-slate-900 text-base">₹{donation.amount}</td>
+                      <td className="p-4">
+                        <div className="font-mono text-xs font-bold text-slate-700">{donation.receiptNumber}</div>
+                        {donation.paymentRef && <div className="text-[10px] text-slate-500 font-mono mt-1">Ref: {donation.paymentRef}</div>}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          donation.status === 'successful' ? 'bg-green-100 text-green-700' :
+                          donation.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {donation.status}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {donation.status === 'successful' && (
+                          <button 
+                            onClick={() => setViewingDonation(donation)}
+                            className="text-red-600 hover:text-red-800 text-xs font-bold underline mr-3"
+                          >
+                            View Receipt
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleOpenDonationModal(donation)}
+                          className="text-slate-600 hover:text-slate-900 mx-2"
+                          title="Edit"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteDonation(donation.id)}
+                          className="text-slate-600 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Sidebar Controls */}
         <div className="lg:col-span-1 space-y-6">
@@ -781,7 +999,9 @@ export default function Admin() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl my-8 flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              
+      <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+
                 <Edit size={24} className="text-blue-600" /> Edit News Article
               </h2>
               <button onClick={() => setEditingArticle(null)} className="text-slate-400 hover:text-red-600 transition-colors">
@@ -916,6 +1136,190 @@ export default function Admin() {
         </div>
       )}
 
+    
+      
+      {isDonationModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md my-8 flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h2 className="text-lg font-bold text-slate-800">{editingDonationId ? 'Edit Donation' : 'Add New Donation'}</h2>
+              <button onClick={() => setIsDonationModalOpen(false)} className="text-slate-500 hover:text-slate-800">
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-4">
+              <form onSubmit={handleSaveDonation} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Donor Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={donationForm.donorName}
+                    onChange={(e) => setDonationForm({ ...donationForm, donorName: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Mobile</label>
+                  <input
+                    type="text"
+                    required
+                    value={donationForm.mobile}
+                    onChange={(e) => setDonationForm({ ...donationForm, mobile: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Amount (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={donationForm.amount}
+                    onChange={(e) => setDonationForm({ ...donationForm, amount: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Transaction Ref / UTR</label>
+                  <input
+                    type="text"
+                    value={donationForm.paymentRef}
+                    onChange={(e) => setDonationForm({ ...donationForm, paymentRef: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+                  <select
+                    value={donationForm.status}
+                    onChange={(e) => setDonationForm({ ...donationForm, status: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="successful">Successful</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => setIsDonationModalOpen(false)} className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 rounded">Cancel</button>
+                  <button type="submit" disabled={isProcessing} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded disabled:opacity-50">
+                    {isProcessing ? 'Saving...' : 'Save Receipt'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+    {viewingDonation && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 overflow-y-auto print:bg-white print:p-0">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-xl my-8 flex flex-col max-h-[90vh] print:shadow-none print:w-full print:max-w-none print:max-h-none print:h-auto">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 print:hidden">
+              <h2 className="font-bold text-slate-800">Donation Receipt</h2>
+              <button onClick={() => setViewingDonation(null)} className="text-slate-500 hover:text-slate-800"><X size={24} /></button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto print:p-0">
+              <div className="flex flex-wrap gap-3 mb-6 print:hidden">
+                <button onClick={handleDownloadPDF} className="flex-1 flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white px-4 py-2.5 rounded-lg font-bold text-sm transition-colors">
+                  <Download size={16} /> Download PDF
+                </button>
+                <button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-900 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors border border-slate-300">
+                  <Printer size={16} /> Print Receipt
+                </button>
+              </div>
+
+              <div ref={receiptRef} className="bg-white text-black p-0 print:p-0 rounded-xl overflow-hidden shadow-lg border border-slate-200 print:shadow-none print:border-none print:rounded-none relative">
+                <div className="h-4 bg-red-700 w-full print:h-3"></div>
+                
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                  <span className="text-8xl font-black rotate-[-45deg] tracking-widest uppercase text-slate-900">LIVE UP 18</span>
+                </div>
+                
+                <div className="p-8 relative z-10 print:p-4">
+                  <div className="flex justify-between items-start border-b-2 border-slate-100 pb-6 mb-6">
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black tracking-tighter text-slate-900 italic">LIVE UP</span>
+                        <span className="text-4xl font-black text-red-600 italic -ml-0.5">18</span>
+                      </div>
+                      <div className="bg-slate-900 px-2 py-0.5 rounded-sm w-max mt-1">
+                        <span className="text-[10px] font-black tracking-[0.4em] text-white leading-none block ml-1">NEWS</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide uppercase">Independent Journalism Support</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="inline-block border border-slate-200 px-3 py-1 rounded text-xs font-bold tracking-widest text-slate-500 uppercase mb-3">
+                        Digital Receipt
+                      </div>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-widest mb-1">Receipt</h3>
+                      <p className="text-sm font-bold text-slate-500">No: <span className="text-red-700">{viewingDonation.receiptNumber}</span></p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-6 gap-x-12 mb-8">
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Received From</span>
+                      <strong className="text-lg text-slate-900">{viewingDonation.donorName}</strong>
+                      <span className="block text-sm text-slate-600 font-medium mt-1">{viewingDonation.mobile}</span>
+                      {viewingDonation.email && <span className="block text-sm text-slate-600 font-medium">{viewingDonation.email}</span>}
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date & Time</span>
+                      <strong className="text-sm text-slate-900">
+                        {viewingDonation.createdAt?.toDate ? new Date(viewingDonation.createdAt.toDate()).toLocaleString() : 'N/A'}
+                      </strong>
+                    </div>
+                    
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Reference (UTR)</span>
+                      <span className="block font-medium font-mono text-sm text-slate-800 break-all">{viewingDonation.paymentRef || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</span>
+                      <span className={`inline-block px-2 py-1 text-xs font-bold uppercase tracking-wider rounded border ${viewingDonation.status === 'successful' ? 'bg-green-50 text-green-700 border-green-200' : viewingDonation.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                        {viewingDonation.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-100 rounded-lg p-5 flex justify-between items-center mb-10">
+                    <div>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Purpose of Donation</span>
+                      <strong className="text-base text-slate-800">Support for Independent Journalism</strong>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Amount</span>
+                      <strong className="text-4xl font-black text-red-700">₹{viewingDonation.amount}</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-end border-t border-slate-100 pt-8 mt-4">
+                    <div className="text-xs text-slate-500 max-w-[60%] leading-relaxed">
+                      <p className="mb-1 font-bold text-slate-700">Note:</p>
+                      * This is a computer-generated receipt.<br/>
+                      * No physical signature is required.
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="w-32 h-16 mx-auto mb-2 relative flex items-center justify-center">
+                        <div className="absolute inset-0 border-[3px] border-red-700/20 rounded-full rotate-[-10deg] flex items-center justify-center">
+                          <span className="text-red-700/30 font-black tracking-widest text-[10px] uppercase rotate-[-5deg]">Verified</span>
+                        </div>
+                        <span className="font-['Brush_Script_MT',cursive] text-2xl text-slate-800 opacity-90">Live UP 18</span>
+                      </div>
+                      <div className="border-t-2 border-slate-800 pt-1 px-4 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                        Authorized Signatory
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

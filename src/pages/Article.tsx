@@ -4,12 +4,14 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { NewsArticle, TeamMember } from "../types";
 import { format } from "date-fns";
 import { hi } from "date-fns/locale";
-import { Share2, MessageCircle, Link2, ArrowLeft, Send } from "lucide-react";
+import { Share2, MessageCircle, Link2, ArrowLeft, Send, Tag } from "lucide-react";
 import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";
 import { useBookmarks } from "../context/BookmarkContext";
-import { Bookmark } from "lucide-react";
+import { Bookmark, ThumbsUp, Flame, ThumbsDown, Tag } from "lucide-react";
+import { FaWhatsapp, FaFacebook, FaTwitter } from 'react-icons/fa';
 import AdBanner from "../components/AdBanner";
 import ShareButtons from "../components/ShareButtons";
+import ReadAloudButton from "../components/ReadAloudButton";
 import Comments from "../components/Comments";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { getCachedDoc, getCachedDocs } from "../lib/cache";
@@ -18,7 +20,34 @@ import YouTubeGallery from "../components/YouTubeGallery";
 import TVNewsFrame from "../components/TVNewsFrame";
 import SEO from "../components/SEO";
 
+
+const ReadingProgressBar = () => {
+  const [readingProgress, setReadingProgress] = useState(0);
+
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const currentProgress = window.scrollY;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight) {
+        setReadingProgress(Number((currentProgress / scrollHeight).toFixed(2)) * 100);
+      }
+    };
+    window.addEventListener('scroll', updateScrollProgress);
+    return () => window.removeEventListener('scroll', updateScrollProgress);
+  }, []);
+
+  return (
+    <div className="fixed top-0 left-0 w-full h-1 bg-transparent z-[60]">
+      <div 
+        className="h-full bg-red-600 transition-all duration-150 ease-out" 
+        style={{ width: `${readingProgress}%` }}
+      />
+    </div>
+  );
+};
+
 export default function Article() {
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -27,6 +56,8 @@ export default function Article() {
   const [reporter, setReporter] = useState<TeamMember | null>(null);
   const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reactions, setReactions] = useState({ like: 0, fire: 0, comment: 0 });
+  const [hasReacted, setHasReacted] = useState(false);
   const [related, setRelated] = useState<NewsArticle[]>([]);
   
   // Comments state
@@ -77,6 +108,39 @@ export default function Article() {
     fetchArticle();
   }, [id]);
 
+  
+  const handleShare = (platform: string) => {
+    const url = window.location.href;
+    const title = article?.title || "LIVE UP 18 NEWS";
+    
+    if (platform === 'whatsapp') {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(title + " - " + url)}`, '_blank');
+    } else if (platform === 'facebook') {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+    }
+  };
+
+  const handleShareToPlatform = (platform: string) => {
+    const url = window.location.href;
+    const titleText = article?.title || "LIVE UP 18 NEWS";
+    
+    if (platform === 'whatsapp') {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(titleText + " - " + url)}`, '_blank');
+    } else if (platform === 'facebook') {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(titleText)}`, '_blank');
+    }
+  };
+
+    const handleReaction = (type: 'like' | 'fire' | 'comment') => {
+    if(hasReacted) return;
+    setReactions(prev => ({...prev, [type]: prev[type] + 1}));
+    setHasReacted(true);
+  };
+  
   if (loading) {
     return <div className="py-20 text-center font-bold text-slate-500 dark:text-slate-400 animate-pulse">{language === 'hi' ? 'लेख लोड हो रहा है...' : 'Loading article...'}</div>;
   }
@@ -84,22 +148,6 @@ export default function Article() {
   if (!article) {
     return <div className="py-20 text-center font-bold text-slate-500 dark:text-slate-400">{language === 'hi' ? 'लेख नहीं मिला।' : 'Article not found.'}</div>;
   }
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    const title = getLocalizedText(article, 'headline', language);
-    const text = getLocalizedText(article, 'shortSummary', language);
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-      } catch (err) {
-        console.error("Error sharing:", err);
-      }
-    } else {
-      handleCopyLink();
-    }
-  };
 
   const handleWhatsAppShare = () => {
     const url = window.location.href;
@@ -150,191 +198,98 @@ ${url}`;
     }
   };
 
+  
   return (
-    <>
-    <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="bg-white dark:bg-slate-950 min-h-screen pb-16">
+      <ReadingProgressBar />
+      <SEO 
+        title={`${getLocalizedText(article, 'headline', language)} | LIVE UP 18 NEWS`}
+        description={getLocalizedText(article, 'content', language).substring(0, 150) + '...'}
+        image={article.featuredImage}
+      />
       
-      <article className="lg:col-span-8">
-        <header className="mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <button 
-              onClick={() => navigate(-1)} 
-              className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-red-600 transition-colors mr-2"
-              title={language === 'hi' ? 'वापस जाएं' : 'Go Back'}
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <Link to={`/category/${(article.category || "").toLowerCase().replace(/ /g, '-')}`} className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-sm uppercase hover:bg-red-700 transition-colors">
-              {article.category}
-            </Link>
-            {article.state && (
-              <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase px-2 border-l border-slate-300">
-                {article.state}
-              </span>
-            )}
-            {article.district && (
-              <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase px-2 border-l border-slate-300">
-                {article.district}
-              </span>
-            )}
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight mb-4">
+      {/* Premium Article Header */}
+      <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+        <div className="flex flex-col items-center text-center">
+          <Link to={`/category/${article.category}`} className="text-red-700 dark:text-red-500 text-[11px] font-black uppercase tracking-[0.2em] mb-6 hover:underline">
+            {article.category?.replace('-', ' ')}
+          </Link>
+          
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-black text-slate-900 dark:text-white leading-[1.15] mb-8">
             {getLocalizedText(article, 'headline', language)}
           </h1>
-          <p className="text-xl text-slate-600 font-medium leading-relaxed mb-6">
-            {getLocalizedText(article, 'shortSummary', language)}
-          </p>
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-y border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="font-bold text-slate-800 dark:text-slate-200">{language === 'hi' ? 'संवाददाता:' : 'Correspondent:'} {article.author}</span>
-              <span>{language === 'hi' ? 'अपडेट:' : 'Updated:'} {(() => { try { return article.updatedDate ? format(new Date(article.updatedDate), "MMM d, yyyy, h:mm a") : format(new Date(article.publicationDate || Date.now()), "MMM d, yyyy, h:mm a") } catch(e) { return "" } })()}</span>
-              <span className="flex items-center gap-1 ml-4 text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full font-bold">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                {article.views ? article.views + 1 : 1} {language === 'hi' ? 'व्यूज' : 'Views'}
-              </span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400 mb-8 border-y border-slate-200 dark:border-slate-800 w-full py-4">
+            <div className="flex items-center">
+              <User size={16} className="mr-2" />
+              <span>{article.author || 'LIVE UP 18 Desk'}</span>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <span className="font-bold mr-2">{language === 'hi' ? 'शेयर करें:' : 'Share:'}</span>
-              <button onClick={handleWhatsAppShare} className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
-                <MessageCircle size={16} />
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+            <div className="flex items-center">
+              <Calendar size={16} className="mr-2" />
+              <time dateTime={article.publicationDate}>
+                {format(new Date(article.publicationDate), "dd MMMM yyyy, p", { 
+                  locale: language === 'hi' ? hi : enUS 
+                })}
+              </time>
+            </div>
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => toggleBookmark(article)}
+                className={`p-1.5 rounded-full transition-colors flex items-center justify-center ${isBookmarked(article.id) ? 'text-red-600 bg-red-50 dark:bg-red-900/20' : 'hover:text-slate-900 dark:hover:text-white'}`}
+                title={isBookmarked(article.id) ? 'Remove Bookmark' : 'Save for later'}
+              >
+                <Bookmark size={18} fill={isBookmarked(article.id) ? 'currentColor' : 'none'} />
               </button>
-              <button onClick={handleShare} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors" title="Share Options">
-                <Share2 size={16} />
-              </button>
-              <button onClick={handleCopyLink} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors" title="Copy Link">
-                <Link2 size={16} />
-              </button>
+              <ShareButtons url={window.location.href} title={getLocalizedText(article, 'headline', language)} />
+              <ReadAloudButton title={getLocalizedText(article, 'headline', language)} content={getLocalizedText(article, 'content', language)} />
             </div>
           </div>
-        </header>
-
-        <figure className="mb-8">
-          
-          {article.videoUrl ? (
-            <TVNewsFrame article={article} />
-          ) : (article.featuredImage && !article.featuredImage.includes('picsum')) && (
-            <img loading="lazy" src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
-          )}
-
-          <figcaption className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-right">{language === 'hi' ? 'स्रोत:' : 'Source:'} {article.sourceAttribution}</figcaption>
-        </figure>
-
-        {getLocalizedArray(article, 'keyPoints', language).length > 0 && (
-          <div className="bg-slate-50 dark:bg-slate-900 border-l-4 border-red-600 p-6 rounded-r-xl mb-8">
-            <h3 className="font-black text-lg mb-3 uppercase text-slate-900 dark:text-white">{language === 'hi' ? 'मुख्य बिंदु' : 'Key Points'}</h3>
-            <ul className="list-disc list-outside ml-5 space-y-2 text-slate-700 dark:text-slate-300">
-              {getLocalizedArray(article, 'keyPoints', language).map((point, idx) => (
-                <li key={idx} className="pl-2">{point}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="prose prose-lg prose-slate max-w-none prose-headings:font-black prose-a:text-red-600 pb-12 border-b border-slate-200 dark:border-slate-700">
-          <p className="whitespace-pre-line text-lg leading-relaxed text-slate-800 dark:text-slate-200">
-            {getLocalizedText(article, 'content', language)}
-          </p>
-          {article.sourceUrl && (
-            <div className="mt-8 pt-6">
-              <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-red-600 text-white font-bold px-6 py-3 rounded-md hover:bg-red-700 transition-colors shadow-md hover:shadow-lg">
-                {language === 'hi' ? 'पूरी खबर मूल वेबसाइट पर पढ़ें' : 'Read Full Article on Source'}
-                <Link2 size={18} />
-              </a>
-            </div>
-          )}
         </div>
+      </header>
 
-      
-        {/* Comments Section */}
-        <section className="mt-12 mb-8 bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-          <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-            <MessageCircle size={24} className="text-red-600" />
-            {language === 'hi' ? 'टिप्पणियाँ' : 'Comments'} ({comments.length})
-          </h3>
-          
-          <form onSubmit={handleCommentSubmit} className="mb-8 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{language === 'hi' ? 'आपका नाम' : 'Your Name'}</label>
-              <input 
-                type="text" 
-                required
-                value={newCommentName}
-                onChange={(e) => setNewCommentName(e.target.value)}
-                placeholder={language === 'hi' ? 'अपना नाम दर्ज करें' : 'Enter your name'}
-                className="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{language === 'hi' ? 'आपकी टिप्पणी' : 'Your Comment'}</label>
-              <textarea 
-                required
-                value={newCommentText}
-                onChange={(e) => setNewCommentText(e.target.value)}
-                placeholder={language === 'hi' ? 'इस खबर के बारे में अपनी राय साझा करें...' : 'Share your thoughts on this news...'}
-                className="w-full px-4 py-2 border border-slate-300 rounded-md h-24 resize-none focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
-              ></textarea>
-            </div>
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              <Send size={18} />
-              {isSubmitting ? (language === 'hi' ? 'भेजा जा रहा है...' : 'Posting...') : (language === 'hi' ? 'टिप्पणी करें' : 'Post Comment')}
-            </button>
-          </form>
+      {/* Hero Image */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="relative aspect-video rounded-xl overflow-hidden shadow-sm bg-slate-100 dark:bg-slate-900">
+          <img 
+            src={article.featuredImage || "https://picsum.photos/seed/news/1200/800"} 
+            alt={getLocalizedText(article, 'headline', language)} 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
 
-          <div className="space-y-4">
-            {comments.length > 0 ? (
-              comments.slice().reverse().map((c: any) => (
-                <div key={c.id} className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-100">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-slate-900 dark:text-white">{c.name}</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{(() => { try { return c.date ? format(new Date(c.date), "MMM d, yyyy") : "Unknown date" } catch(e) { return "" } })()}</span>
-                  </div>
-                  <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line">{c.text}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-slate-500 dark:text-slate-400 text-center py-4 italic">
-                {language === 'hi' ? 'अभी तक कोई टिप्पणी नहीं। अपनी राय साझा करने वाले पहले व्यक्ति बनें!' : 'No comments yet. Be the first to share your thoughts!'}
-              </p>
-            )}
-          </div>
-        </section>
-      </article>
-
-      <aside className="lg:col-span-4 flex flex-col gap-8">
-        <AdBanner position="article_sidebar" className="h-[300px]" />
-
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <div className="bg-slate-900 text-white p-4">
-            <h3 className="text-lg font-black uppercase">{language === 'hi' ? 'संबंधित समाचार' : 'Related News'}</h3>
-          </div>
-          <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-700 p-4">
-            {related.map(news => (
-              <Link key={news.id} to={`/article/${news.id}`} className="py-4 group flex gap-4 first:pt-0 last:pb-0">
-                {news.featuredImage ? (
-                  <img loading="lazy" src={news.featuredImage} alt={getLocalizedText(news, 'headline', language)} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
-                ) : (
-                  <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-md flex items-center justify-center border border-slate-200 dark:border-slate-700 flex-shrink-0">
-                    <span className="text-slate-400 font-bold text-[10px] text-center px-1">LIVE UP 18</span>
-                  </div>
-                )}
-                <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-red-600 transition-colors line-clamp-3 text-sm">
-                  {getLocalizedText(news, 'headline', language)}
-                </h4>
-              </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-12">
+        
+        {/* Main Content */}
+        <div className="lg:w-2/3">
+          <article className="prose prose-lg dark:prose-invert max-w-none font-sans text-slate-800 dark:text-slate-300 leading-relaxed mb-12 prose-headings:font-heading prose-headings:font-black prose-a:text-red-600">
+            {getLocalizedText(article, 'content', language).split('\n').map((paragraph, index) => (
+              <p key={index} className="mb-6">{paragraph}</p>
             ))}
-          </div>
+          </article>
+
+          {/* Tags */}
+          {article.tags && article.tags.length > 0 && (
+            <div className="flex items-center gap-3 border-t border-slate-200 dark:border-slate-800 pt-8 mt-8 flex-wrap">
+              <Tag size={18} className="text-slate-400" />
+              {getLocalizedArray(article, 'tags', language).map(tag => (
+                <span key={tag} className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1 text-sm font-medium rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-      </aside>
+
+        {/* Sidebar */}
+        <aside className="lg:w-1/3 space-y-8">
+          <AdBanner position="article_sidebar" />
+          <TrendingWidget currentArticleId={article.id} />
+        </aside>
+      </div>
     </div>
-    <div className="mt-12 w-full max-w-7xl mx-auto border-t border-slate-200 dark:border-slate-800 pt-8">
-      <YouTubeGallery />
-    </div>
-    </>
   );
+
 }

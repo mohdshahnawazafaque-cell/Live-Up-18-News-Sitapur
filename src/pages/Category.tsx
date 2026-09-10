@@ -41,66 +41,53 @@ export default function Category() {
     return <div className="py-20 text-center font-bold text-slate-500 animate-pulse">{language === 'hi' ? `${categoryName} समाचार लोड हो रहे हैं...` : `Loading ${categoryName} news...`}</div>;
   }
 
+  
   return (
-    <div className="max-w-5xl mx-auto">
-      <header className="mb-8 border-b-4 border-red-600 pb-4">
-        <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight">{categoryName}</h1>
-      </header>
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-[70vh]">
+      <div className="flex flex-col items-center justify-center border-b-2 border-slate-900 dark:border-white pb-8 mb-12">
+        <span className="text-red-700 dark:text-red-500 text-sm font-black uppercase tracking-[0.3em] mb-4">
+          Category
+        </span>
+        <h1 className="text-5xl md:text-6xl font-heading font-black text-slate-900 dark:text-white uppercase tracking-wider text-center">
+          {category?.replace('-', ' ')}
+        </h1>
+      </div>
 
-      {articles.length === 0 ? (
-        <div className="text-center py-12 text-slate-500">
-          {language === 'hi' ? 'इस श्रेणी में कोई समाचार उपलब्ध नहीं है।' : 'No news available in this category.'}
+      {news.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-xl text-slate-500 dark:text-slate-400 font-medium">No articles found in this category.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          
-          <div className="md:col-span-8 flex flex-col gap-8">
-            {articles.map((news, idx) => (
-              <Link key={news.id} to={`/article/${news.id}`} className="group flex flex-col sm:flex-row gap-6 pb-8 border-b border-slate-200 last:border-0">
-                <div className="sm:w-2/5 flex-shrink-0 overflow-hidden rounded-xl aspect-[4/3]">
-                  {news.featuredImage ? (
-                    <img loading="lazy" 
-                      src={news.featuredImage} 
-                      alt={getLocalizedText(news, 'headline', language)}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center border border-slate-200 transition-transform duration-500 group-hover:scale-105">
-                      <span className="text-slate-300 font-bold text-lg">LIVE UP 18</span>
-                    </div>
-                  )}
-                </div>
-                <div className="sm:w-3/5 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-2">
-                    {news.state && (
-                      <span className="text-xs font-bold text-slate-500 uppercase">{news.state}</span>
-                    )}
-                    {news.state && news.district && <span className="text-slate-300">•</span>}
-                    {news.district && (
-                      <span className="text-xs font-bold text-slate-500 uppercase">{news.district}</span>
-                    )}
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-900 leading-tight mb-3 group-hover:text-red-700 transition-colors">
-                    {getLocalizedText(news, 'headline', language)}
-                  </h2>
-                  <p className="text-slate-600 line-clamp-2 mb-4">
-                    {getLocalizedText(news, 'shortSummary', language)}
-                  </p>
-                  <div className="text-xs text-slate-400 mt-auto">
-                    {(() => { try { return news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : "" } catch(e) { return "" } })()}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <div className="md:col-span-4">
-             <div className="sticky top-24 bg-slate-100 rounded-xl p-6 h-[400px] flex items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-300">
-                {language === 'hi' ? 'विज्ञापन स्थान' : 'Advertisement Space'}
-             </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {news.map((article) => (
+            <Link key={article.id} to={`/article/${article.id}`} className="group flex flex-col">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-lg mb-5 bg-slate-100 dark:bg-slate-900">
+                <img 
+                  src={article.featuredImage || "https://picsum.photos/seed/news/800/600"} 
+                  alt={getLocalizedText(article, 'headline', language)}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-red-700 dark:text-red-500 text-[10px] font-black uppercase tracking-widest">
+                  {article.category?.replace('-', ' ')}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700 text-[10px]">•</span>
+                <span className="text-slate-500 text-[10px] font-medium uppercase tracking-widest">
+                  {formatDistanceToNow(article.publicationDate, { addSuffix: true, locale: language === 'hi' ? hi : undefined })}
+                </span>
+              </div>
+              <h2 className="font-heading font-bold text-xl text-slate-900 dark:text-slate-100 leading-snug mb-3 group-hover:text-red-700 dark:group-hover:text-red-500 transition-colors line-clamp-3">
+                {getLocalizedText(article, 'headline', language)}
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2">
+                {getLocalizedText(article, 'shortSummary', language)}
+              </p>
+            </Link>
+          ))}
         </div>
       )}
     </div>
   );
+
 }

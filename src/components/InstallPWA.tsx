@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function InstallPWA() {
+export default function InstallPWA({ className }: { className?: string }) {
   const { language } = useLanguage();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -28,7 +28,7 @@ export default function InstallPWA() {
   };
 
   return (
-    <button onClick={handleInstall} className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-full text-xs md:text-sm transition-colors shadow-lg animate-pulse mx-2 border border-red-500">
+    <button onClick={handleInstall} className={className || "flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-full text-xs md:text-sm transition-colors shadow-lg animate-pulse mx-2 border border-red-500"}>
       <Download size={14} /> {language === 'hi' ? 'ऐप इंस्टॉल करें' : 'Install App'}
     </button>
   );
