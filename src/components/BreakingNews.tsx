@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
-import { collection, query, orderBy, limit, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, where } from "firebase/firestore";
+import { getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
 
 export default function BreakingNews() {
@@ -14,14 +15,11 @@ export default function BreakingNews() {
     const fetchBreaking = async () => {
       try {
         const q = query(collection(db, "news"), where("isBreaking", "==", true), orderBy("publicationDate", "desc"), limit(5));
-        const snap = await getDocs(q);
-        const articles: NewsArticle[] = [];
-        snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+        let articles = await getCachedDocs(q, 'breaking-news');
         
         if (articles.length === 0) {
           const q2 = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(5));
-          const snap2 = await getDocs(q2);
-          snap2.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+          articles = await getCachedDocs(q2, 'latest-news-fallback');
         }
         setBreakingNews(articles);
       } catch (err) {
@@ -44,18 +42,21 @@ export default function BreakingNews() {
       
       <div className="flex-1 h-full relative text-white flex items-center overflow-hidden">
         {/* We use a wide container and CSS animation to scroll right to left */}
-        <div className="whitespace-nowrap animate-marquee hover:pause flex items-center ">
+        
+        <div className="flex w-full group overflow-hidden">
+          <div className="whitespace-nowrap animate-marquee group-hover:pause flex shrink-0 items-center">
+            
           
           <span className="font-bold text-yellow-400 flex items-center gap-2 mx-8 text-sm md:text-base">
             <span className="text-red-500 text-xl">•</span>
             विज्ञापन एवं समाचार के लिए व्हाट्सऐप पर संपर्क करें — अपने प्रतिष्ठान का विज्ञापन करवाएँ या अपने क्षेत्र की महत्वपूर्ण खबर हम तक पहुँचाएँ। Live UP 18 News | व्हाट्सऐप चैट: 
             <a 
-              href="https://wa.me/919956078419?text=Hello%20Live%20UP%2018%20News" 
+              href="https://wa.me/919838416560?text=Hello%20Live%20UP%2018%20News" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-[#25D366] font-black underline decoration-[#25D366]/50 hover:text-green-300 ml-1"
             >
-              9956078419
+              9838416560
             </a>
           </span>
 
@@ -71,16 +72,58 @@ export default function BreakingNews() {
             <span className="text-red-500 text-xl">•</span>
             विज्ञापन एवं समाचार के लिए व्हाट्सऐप पर संपर्क करें — अपने प्रतिष्ठान का विज्ञापन करवाएँ या अपने क्षेत्र की महत्वपूर्ण खबर हम तक पहुँचाएँ। Live UP 18 News | व्हाट्सऐप चैट: 
             <a 
-              href="https://wa.me/919956078419?text=Hello%20Live%20UP%2018%20News" 
+              href="https://wa.me/919838416560?text=Hello%20Live%20UP%2018%20News" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-[#25D366] font-black underline decoration-[#25D366]/50 hover:text-green-300 ml-1"
             >
-              9956078419
+              9838416560
             </a>
           </span>
           
+        
+          </div>
+          <div className="whitespace-nowrap animate-marquee group-hover:pause flex shrink-0 items-center" aria-hidden="true">
+            
+          
+          <span className="font-bold text-yellow-400 flex items-center gap-2 mx-8 text-sm md:text-base">
+            <span className="text-red-500 text-xl">•</span>
+            विज्ञापन एवं समाचार के लिए व्हाट्सऐप पर संपर्क करें — अपने प्रतिष्ठान का विज्ञापन करवाएँ या अपने क्षेत्र की महत्वपूर्ण खबर हम तक पहुँचाएँ। Live UP 18 News | व्हाट्सऐप चैट: 
+            <a 
+              href="https://wa.me/919838416560?text=Hello%20Live%20UP%2018%20News" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-[#25D366] font-black underline decoration-[#25D366]/50 hover:text-green-300 ml-1"
+            >
+              9838416560
+            </a>
+          </span>
+
+          {breakingNews.map((news) => (
+            <Link key={news.id} to={`/article/${news.id}`} className="font-semibold text-sm md:text-base hover:text-red-400 transition-colors flex items-center gap-2 mx-8">
+              <span className="text-red-500 text-xl">•</span>
+              {getLocalizedText(news, 'headline', language)}
+            </Link>
+          ))}
+          
+          {/* Duplicate the ad message at the end so it loops cleanly if there aren't many news items */}
+          <span className="font-bold text-yellow-400 flex items-center gap-2 mx-8 text-sm md:text-base pr-8">
+            <span className="text-red-500 text-xl">•</span>
+            विज्ञापन एवं समाचार के लिए व्हाट्सऐप पर संपर्क करें — अपने प्रतिष्ठान का विज्ञापन करवाएँ या अपने क्षेत्र की महत्वपूर्ण खबर हम तक पहुँचाएँ। Live UP 18 News | व्हाट्सऐप चैट: 
+            <a 
+              href="https://wa.me/919838416560?text=Hello%20Live%20UP%2018%20News" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-[#25D366] font-black underline decoration-[#25D366]/50 hover:text-green-300 ml-1"
+            >
+              9838416560
+            </a>
+          </span>
+          
+        
+          </div>
         </div>
+
       </div>
     </div>
   );

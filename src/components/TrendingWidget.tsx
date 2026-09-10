@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { getCachedDocs } from '../lib/cache';
 import { db } from '../lib/firebase';
 import { NewsArticle } from '../types';
 import { useLanguage, getLocalizedText } from '../context/LanguageContext';
@@ -16,9 +17,7 @@ export default function TrendingWidget() {
         // Just pulling recent news and shuffling to simulate 'trending' if view count isn't robustly tracked due to quota.
         // Ideally: orderBy("views", "desc")
         const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(10));
-        const snap = await getDocs(q);
-        const articles: NewsArticle[] = [];
-        snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+        const articles = await getCachedDocs(q, 'trending-news');
         
         // Pseudo-randomize top 5 for demo, or just use the first 5.
         // Let's just pick top 5 to represent trending.

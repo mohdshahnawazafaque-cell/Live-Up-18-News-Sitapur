@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, where, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
+import { getCachedDocs } from '../lib/cache';
 import { db } from '../lib/firebase';
 import { Poll } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -15,9 +16,9 @@ export default function PollWidget() {
     const fetchPoll = async () => {
       try {
         const q = query(collection(db, "polls"), where("active", "==", true));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const pollData = { id: snap.docs[0].id, ...snap.docs[0].data() } as Poll;
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        if (snap && snap.length > 0) {
+          const pollData = snap[0] as Poll;
           setPoll(pollData);
           
           let total = 0;

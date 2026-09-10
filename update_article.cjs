@@ -1,42 +1,32 @@
 const fs = require('fs');
+let code = fs.readFileSync('src/pages/Article.tsx', 'utf8');
 
-let content = fs.readFileSync('src/pages/Article.tsx', 'utf8');
-
-// Imports
-if (!content.includes('ShareButtons')) {
-  content = content.replace(
-    'import AdBanner from "../components/AdBanner";',
-    'import AdBanner from "../components/AdBanner";\nimport ShareButtons from "../components/ShareButtons";\nimport Comments from "../components/Comments";'
-  );
+// Add import
+if (!code.includes('TVNewsFrame')) {
+    code = code.replace(
+        'import YouTubeGallery from "../components/YouTubeGallery";',
+        'import YouTubeGallery from "../components/YouTubeGallery";\nimport TVNewsFrame from "../components/TVNewsFrame";'
+    );
 }
 
-// Add share buttons below article title
-if (!content.includes('<ShareButtons')) {
-  content = content.replace(
-    '<div className="flex items-center gap-4 text-slate-500 text-sm font-semibold mb-6">',
-    `<ShareButtons url={window.location.href} title={getLocalizedText(article, 'headline', language)} />
-          <div className="flex items-center gap-4 text-slate-500 text-sm font-semibold mb-6">`
-  );
-}
+// Replace the video render logic
+const oldVideoLogic = `{article.videoUrl ? (
+            article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be') ? (
+              <div className="aspect-w-16 aspect-h-9 w-full rounded-xl overflow-hidden shadow-md">
+                <iframe src={getEmbedUrl(article.videoUrl)} className="w-full h-[400px] md:h-[500px]" allowFullScreen></iframe>
+              </div>
+            ) : (
+              <video src={article.videoUrl} controls className="w-full h-auto rounded-xl shadow-md max-h-[500px] bg-black" />
+            )
+          ) : !article.featuredImage.includes('picsum') && (
+            <img loading="lazy" src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
+          )}`;
 
-// Add comments below article content
-if (!content.includes('<Comments')) {
-  content = content.replace(
-    '{/* Sidebar Ads */}',
-    `<Comments articleId={article.id} />
-          </div>
-          
-          {/* Sidebar Ads */}`
-  );
-  
-  // Actually, let's just insert it before the closing div of the main article content.
-  // We'll replace the exact string from where the content ends.
-  content = content.replace(
-    '</article>\n        </div>\n\n        {/* Sidebar Ads */}',
-    '</article>\n          <Comments articleId={article.id} />\n        </div>\n\n        {/* Sidebar Ads */}'
-  );
-}
+const newVideoLogic = `{article.videoUrl ? (
+            <TVNewsFrame article={article} />
+          ) : !article.featuredImage.includes('picsum') && (
+            <img loading="lazy" src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
+          )}`;
 
-// We also need to increment views. Wait, incrementing views causes writes on every load. Given the quota limits, maybe let's just do an occasional trending simulation or read views. Let's skip auto-incrementing views to save Firebase quota for this free project, and just randomize trending or pick top 5 recently updated. The prompt mentions the quota was exhausted. I'll stick to a static Trending list or randomly picked.
-
-fs.writeFileSync('src/pages/Article.tsx', content);
+code = code.replace(oldVideoLogic, newVideoLogic);
+fs.writeFileSync('src/pages/Article.tsx', code);

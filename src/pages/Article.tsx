@@ -10,8 +10,10 @@ import AdBanner from "../components/AdBanner";
 import ShareButtons from "../components/ShareButtons";
 import Comments from "../components/Comments";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
+import { getCachedDoc, getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
 import YouTubeGallery from "../components/YouTubeGallery";
+import TVNewsFrame from "../components/TVNewsFrame";
 
 export default function Article() {
   const { id } = useParams<{ id: string }>();
@@ -44,7 +46,7 @@ export default function Article() {
           
           // Fetch related
           const q = query(collection(db, "news"), where("category", "==", data.category), limit(5));
-          const relatedSnap = await getDocs(q);
+          const relatedSnap = await getCachedDocs(q, 'cache-' + Date.now());
           const relatedArticles: NewsArticle[] = [];
           relatedSnap.forEach(rDoc => {
             if (rDoc.id !== id) {
@@ -191,15 +193,9 @@ ${url}`;
         <figure className="mb-8">
           
           {article.videoUrl ? (
-            article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be') ? (
-              <div className="aspect-w-16 aspect-h-9 w-full rounded-xl overflow-hidden shadow-md">
-                <iframe src={getEmbedUrl(article.videoUrl)} className="w-full h-[400px] md:h-[500px]" allowFullScreen></iframe>
-              </div>
-            ) : (
-              <video src={article.videoUrl} controls className="w-full h-auto rounded-xl shadow-md max-h-[500px] bg-black" />
-            )
+            <TVNewsFrame article={article} />
           ) : !article.featuredImage.includes('picsum') && (
-            <img src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
+            <img loading="lazy" src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
           )}
 
           <figcaption className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-right">{language === 'hi' ? 'स्रोत:' : 'Source:'} {article.sourceAttribution}</figcaption>
@@ -301,7 +297,7 @@ ${url}`;
             {related.map(news => (
               <Link key={news.id} to={`/article/${news.id}`} className="py-4 group flex gap-4 first:pt-0 last:pb-0">
                 {news.featuredImage ? (
-                  <img src={news.featuredImage} alt={getLocalizedText(news, 'headline', language)} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
+                  <img loading="lazy" src={news.featuredImage} alt={getLocalizedText(news, 'headline', language)} className="w-24 h-24 object-cover rounded-md flex-shrink-0" />
                 ) : (
                   <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-md flex items-center justify-center border border-slate-200 dark:border-slate-700 flex-shrink-0">
                     <span className="text-slate-400 font-bold text-[10px] text-center px-1">LIVE UP 18</span>

@@ -21,7 +21,7 @@ export default function Footer() {
             </div>
             <p className="text-sm text-slate-400">
               {language === 'hi' 
-                ? 'लाइव अप 18 न्यूज़ उत्तर प्रदेश, भारत और दुनिया भर की ताज़ा ख़बरों के लिए आपका भरोसेमंद स्रोत है। तेज़, विश्वसनीय और निष्पक्ष रिपोर्टिंग।' 
+                ? 'लाइव यूपी 18 न्यूज़ उत्तर प्रदेश, भारत और दुनिया भर की ताज़ा ख़बरों के लिए आपका भरोसेमंद स्रोत है। तेज़, विश्वसनीय और निष्पक्ष रिपोर्टिंग।' 
                 : 'Live Up 18 News is your trusted source for the latest news from Uttar Pradesh, India, and around the world. Fast, reliable, and unbiased reporting.'}
             </p>
           </div>
@@ -51,7 +51,9 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-bold text-lg mb-4 uppercase">{language === 'hi' ? 'संपर्क करें' : 'Contact Us'}</h3>
             <ul className="space-y-2 text-sm">
-              <li>{language === 'hi' ? 'संपादक/रिपोर्टर' : 'Editor/Reporter'}: मो० शाहनवाज़</li>
+                            <li>{language === 'hi' ? 'प्रधान संपादक (Editor-in-Chief)' : 'Editor-in-Chief'}: मो० शाहनवाज़ (Mohd Shahnawaz)</li>
+              <li>{language === 'hi' ? 'कॉलिंग नंबर (Call)' : 'Calling Number'}: <a href="tel:+919956078419" className="hover:text-red-500 transition-colors font-bold">+91 99560 78419</a></li>
+              <li>{language === 'hi' ? 'व्हाट्सएप (WhatsApp)' : 'WhatsApp'}: <a href="https://wa.me/919838416560" className="hover:text-green-500 transition-colors font-bold text-green-500">+91 98384 16560</a></li>
               <li>{language === 'hi' ? 'ईमेल' : 'Email'}: liveup18news@gmail.com</li>
               <li>{language === 'hi' ? 'वेबसाइट' : 'Website'}: <a href="https://liveup18news.netlify.app/" target="_blank" rel="noopener noreferrer" className="hover:text-red-500 transition-colors">liveup18news.netlify.app/</a></li>
             </ul>

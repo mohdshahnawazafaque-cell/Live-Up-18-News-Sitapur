@@ -4,7 +4,8 @@ import { NewsArticle } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
 import AdBanner from "../components/AdBanner";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy } from "firebase/firestore";
+import { getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
 
 export default function Category() {
@@ -22,9 +23,8 @@ export default function Category() {
         const q = query(collection(db, "news"), where("category", "==", categoryName));
         // Note: orderBy("publicationDate", "desc") requires a composite index if where() is used.
         // We'll fetch and sort in client to avoid index requirement for now.
-        const snap = await getDocs(q);
-        const fetchedArticles: NewsArticle[] = [];
-        snap.forEach(doc => fetchedArticles.push({ id: doc.id, ...doc.data() } as NewsArticle));
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const fetchedArticles = (snap || []) as NewsArticle[];
         
         fetchedArticles.sort((a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime());
         setArticles(fetchedArticles);
@@ -59,7 +59,7 @@ export default function Category() {
               <Link key={news.id} to={`/article/${news.id}`} className="group flex flex-col sm:flex-row gap-6 pb-8 border-b border-slate-200 last:border-0">
                 <div className="sm:w-2/5 flex-shrink-0 overflow-hidden rounded-xl aspect-[4/3]">
                   {news.featuredImage ? (
-                    <img 
+                    <img loading="lazy" 
                       src={news.featuredImage} 
                       alt={getLocalizedText(news, 'headline', language)}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

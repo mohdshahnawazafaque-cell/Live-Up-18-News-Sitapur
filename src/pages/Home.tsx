@@ -7,7 +7,8 @@ import { useLanguage, getLocalizedText } from "../context/LanguageContext";
 import AdBanner from "../components/AdBanner";
 import PollWidget from "../components/PollWidget";
 import TrendingWidget from "../components/TrendingWidget";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit } from "firebase/firestore";
+import { getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
 
 export default function Home() {
@@ -24,11 +25,7 @@ export default function Home() {
     const fetchNews = async () => {
       try {
         const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(25));
-        const querySnapshot = await getDocs(q);
-        const articles: NewsArticle[] = [];
-        querySnapshot.forEach((doc) => {
-          articles.push({ id: doc.id, ...doc.data() } as NewsArticle);
-        });
+        const articles = await getCachedDocs(q, 'home-news');
 
         
         const videoArticles = articles.filter(a => a.videoUrl);
@@ -68,7 +65,7 @@ export default function Home() {
       {/* Top Ad/Banner Section */}
       <section className="w-full">
         <a href="#" className="block w-full overflow-hidden rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
-          <img src="/banner1.png" alt="Live Up 18 News Promo" className="w-full h-auto object-cover max-h-[300px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <img loading="lazy" src="/banner1.png" alt="Live Up 18 News Promo" className="w-full h-auto object-cover max-h-[300px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         </a>
       </section>
 
@@ -103,7 +100,7 @@ export default function Home() {
         <div className="lg:col-span-8">
           {featuredNews && (
             <Link to={`/article/${featuredNews.id}`} className="group block relative overflow-hidden rounded-xl shadow-lg">
-              <img 
+              <img loading="lazy" 
                 src={featuredNews.featuredImage} 
                 alt={getLocalizedText(featuredNews, 'headline', language)}
                 className="w-full h-[500px] object-cover transition-transform duration-700 group-hover:scale-105"
@@ -163,7 +160,7 @@ export default function Home() {
           {latestNews.slice(0, 4).map(news => (
             <Link key={news.id} to={`/article/${news.id}`} className="group flex flex-col gap-3">
               <div className="overflow-hidden rounded-lg aspect-video relative">
-                <img 
+                <img loading="lazy" 
                   src={news.featuredImage} 
                   alt={getLocalizedText(news, 'headline', language)}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -184,7 +181,7 @@ export default function Home() {
       {/* Middle Ad/Banner Section */}
       <section className="w-full my-8">
         <a href="#" className="block w-full overflow-hidden rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
-          <img src="/banner2.png" alt="Live Up 18 News Promo" className="w-full h-auto object-cover max-h-[300px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <img loading="lazy" src="/banner2.png" alt="Live Up 18 News Promo" className="w-full h-auto object-cover max-h-[300px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
         </a>
       </section>
 
@@ -213,7 +210,7 @@ export default function Home() {
                 <Link key={news.id} to={`/article/${news.id}`} className={`group flex gap-4 ${idx !== 0 ? 'items-center' : 'flex-col'}`}>
                   <div className={`overflow-hidden rounded-lg relative flex-shrink-0 ${idx === 0 ? 'w-full aspect-video' : 'w-24 h-24'}`}>
                     {news.featuredImage ? (
-                      <img 
+                      <img loading="lazy" 
                         src={news.featuredImage} 
                         alt={getLocalizedText(news, 'headline', language)}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

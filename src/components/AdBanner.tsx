@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getCachedDocs } from "../lib/cache";
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Advertisement } from '../types';
@@ -16,10 +17,10 @@ export default function AdBanner({ position, className = "" }: { position: strin
           where("position", "==", position),
           where("active", "==", true)
         );
-        const snap = await getDocs(q);
-        if (!snap.empty) {
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        if (snap && snap.length > 0) {
           // If multiple ads for the same position, pick a random one
-          const ads = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Advertisement));
+          const ads = snap as Advertisement[];
           const randomAd = ads[Math.floor(Math.random() * ads.length)];
           setAd(randomAd);
         }
@@ -34,7 +35,7 @@ export default function AdBanner({ position, className = "" }: { position: strin
   if (ad) {
     return (
       <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className={`block w-full overflow-hidden rounded-xl shadow-sm ${className}`}>
-        <img src={ad.imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
+        <img loading="lazy" src={ad.imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
       </a>
     );
   }

@@ -1,3 +1,4 @@
+import { getCachedDocs } from "../lib/cache";
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { NewsArticle } from "../types";
@@ -17,7 +18,7 @@ export default function Search() {
       setLoading(true);
       try {
         const q = fsQuery(collection(db, "news"), orderBy("publicationDate", "desc"), limit(100));
-        const snap = await getDocs(q);
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
         const articles: NewsArticle[] = [];
         snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
         
@@ -55,7 +56,7 @@ export default function Search() {
             <Link key={news.id} to={`/article/${news.id}`} className="group bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-slate-100 dark:border-slate-700 flex flex-col h-full">
               <div className="aspect-video overflow-hidden relative bg-slate-100 dark:bg-slate-700">
                 {news.featuredImage && (
-                  <img 
+                  <img loading="lazy" 
                     src={news.featuredImage} 
                     alt={getLocalizedText(news, 'headline', language)}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"

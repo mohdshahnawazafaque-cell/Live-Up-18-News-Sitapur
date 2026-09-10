@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getCachedDocs } from "../lib/cache";
 import { collection, query, where, orderBy, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Comment } from '../types';
@@ -17,9 +18,8 @@ export default function Comments({ articleId }: { articleId: string }) {
     const fetchComments = async () => {
       try {
         const q = query(collection(db, "comments"), where("articleId", "==", articleId));
-        const snap = await getDocs(q);
-        const fetched: Comment[] = [];
-        snap.forEach(doc => fetched.push({ id: doc.id, ...doc.data() } as Comment));
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const fetched = (snap || []) as Comment[];
         fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setComments(fetched);
       } catch (err) {

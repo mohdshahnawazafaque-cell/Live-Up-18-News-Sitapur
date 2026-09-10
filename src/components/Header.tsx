@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, X, Moon, Sun } from "lucide-react";
+import { Search, Menu, X, Moon, Sun, PhoneCall } from "lucide-react";
 import { format } from "date-fns";
 import { hi, enUS } from "date-fns/locale";
 import { useLanguage } from "../context/LanguageContext";
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { en: "HOME", hi: "होम", path: "/" },
   { en: "INDIA", hi: "भारत", path: "/category/india" },
   { en: "UTTAR PRADESH", hi: "उत्तर प्रदेश", path: "/category/uttar-pradesh" },
+  { en: "UP DISTRICTS", hi: "यूपी के ज़िले", path: "/districts" },
   { en: "POLITICS", hi: "राजनीति", path: "/category/politics" },
   { en: "CRIME", hi: "क्राइम", path: "/category/crime" },
   { en: "WEATHER", hi: "मौसम", path: "/category/weather" },
@@ -49,6 +50,10 @@ export default function Header() {
       <div className="border-b border-slate-700 bg-slate-950 dark:bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center text-sm text-slate-300">
           <div>{currentDate}</div>
+          <div className="flex items-center gap-2 text-green-400 font-bold bg-green-900/30 px-3 py-1 rounded-full text-xs md:text-sm border border-green-800/50">
+            <PhoneCall size={14} className="animate-pulse" />
+            <a href="tel:+919956078419">Call: +91 99560 78419</a>
+          </div>
           <div className="flex gap-4 items-center">
             <Link to="/admin" className="hover:text-red-400 font-bold text-red-500 transition-colors mr-2 flex items-center gap-1">
               {language === 'hi' ? 'एडमिन' : 'Admin'}

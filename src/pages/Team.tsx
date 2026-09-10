@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getCachedDocs } from "../lib/cache";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { TeamMember } from "../types";
@@ -14,11 +15,8 @@ export default function Team() {
     const fetchTeam = async () => {
       try {
         const q = query(collection(db, "team"), orderBy("createdAt", "asc"));
-        const snap = await getDocs(q);
-        const members: TeamMember[] = [];
-        snap.forEach(doc => {
-          members.push({ id: doc.id, ...doc.data() } as TeamMember);
-        });
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const members = (snap || []) as TeamMember[];
         setTeam(members);
       } catch (err) {
         console.error("Error fetching team:", err);

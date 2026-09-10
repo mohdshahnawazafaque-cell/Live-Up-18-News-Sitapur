@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getCachedDocs } from "../lib/cache";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { EPaper } from "../types";
@@ -15,7 +16,7 @@ export default function EPaperPage() {
     const fetchEPapers = async () => {
       try {
         const q = query(collection(db, "epapers"), orderBy("date", "desc"));
-        const snap = await getDocs(q);
+        const snap = await getCachedDocs(q, 'cache-' + Date.now());
         const fetched: EPaper[] = [];
         snap.forEach(doc => {
           fetched.push({ id: doc.id, ...doc.data() } as EPaper);

@@ -40,10 +40,20 @@
 }
 
 @keyframes marquee {
-  0% { transform: translateX(100vw); }
+  0% { transform: translateX(0%); }
   100% { transform: translateX(-100%); }
 }
 
 .animate-marquee {
   animation: marquee 35s linear infinite;
+}
+
+.quota-banner {
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
 }

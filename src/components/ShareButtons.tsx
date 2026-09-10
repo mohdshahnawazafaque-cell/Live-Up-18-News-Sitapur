@@ -8,16 +8,37 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(url);
-    alert(language === 'hi' ? 'लिंक कॉपी हो गया!' : 'Link copied to clipboard!');
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: title,
+          url: url,
+        });
+      } catch (error) {
+        console.error('Error sharing', error);
+      }
+    } else {
+      navigator.clipboard.writeText(url);
+      alert(language === 'hi' ? 'लिंक कॉपी हो गया!' : 'Link copied to clipboard!');
+    }
   };
 
   return (
-    <div className="flex items-center gap-3 py-4 border-y border-slate-200 my-6">
-      <span className="font-bold text-slate-700 flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-3 py-4 border-y border-slate-200 dark:border-slate-800 my-6">
+      <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
         <Share2 size={18} /> {language === 'hi' ? 'शेयर करें:' : 'Share:'}
       </span>
+      {navigator.share && (
+        <button 
+          onClick={handleShare}
+          className="bg-indigo-600 text-white p-2 px-4 rounded-full hover:scale-105 transition-transform text-sm font-bold flex items-center gap-2"
+        >
+          <Share2 size={16} />
+          {language === 'hi' ? 'सीधे शेयर करें' : 'Share directly'}
+        </button>
+      )}
       <a 
         href={`https://api.whatsapp.com/send?text=${encodedTitle} ${encodedUrl}`} 
         target="_blank" 
@@ -43,8 +64,9 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
         <Twitter size={20} />
       </a>
       <button 
-        onClick={copyToClipboard}
+        onClick={handleShare}
         className="bg-slate-500 text-white p-2 rounded-full hover:scale-110 transition-transform"
+        title={language === 'hi' ? 'कॉपी करें' : 'Copy link'}
       >
         <LinkIcon size={20} />
       </button>
