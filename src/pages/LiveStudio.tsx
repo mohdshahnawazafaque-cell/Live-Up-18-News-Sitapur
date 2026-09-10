@@ -10,7 +10,7 @@ export default function LiveStudio() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tmpCanvasRef = useRef<HTMLCanvasElement>(null);
   const bgImageRef = useRef<HTMLImageElement>(null);
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number | undefined>(undefined);
 
   // State
   const [isStreaming, setIsStreaming] = useState(false);

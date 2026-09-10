@@ -87,7 +87,7 @@ export default function Category() {
                     {getLocalizedText(news, 'shortSummary', language)}
                   </p>
                   <div className="text-xs text-slate-400 mt-auto">
-                    {news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : ""}
+                    {(() => { try { return news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : "" } catch(e) { return "" } })()}
                   </div>
                 </div>
               </Link>

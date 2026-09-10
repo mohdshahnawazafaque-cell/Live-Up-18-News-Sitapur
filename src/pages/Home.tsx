@@ -17,6 +17,7 @@ export default function Home() {
   const [topHeadlines, setTopHeadlines] = useState<NewsArticle[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ [key: string]: NewsArticle[] }>({});
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function Home() {
         }
       } catch (error) {
         console.error("Error fetching news:", error);
+        setError(error.message || "Failed to load news.");
       }
     };
 
@@ -94,6 +96,7 @@ export default function Home() {
         </div>
       </section>
 
+      {error && <div className="bg-red-100 border-l-4 border-red-600 text-red-700 p-4 mb-8" role="alert"><p className="font-bold">Error loading news</p><p>{error}</p></div>}
       {/* Featured Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Featured */}
@@ -142,7 +145,7 @@ export default function Home() {
                     {getLocalizedText(news, 'headline', language)}
                   </h4>
                   <div className="text-slate-500 dark:text-slate-400 text-xs mt-2">
-                    {news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : ""}
+                    {(() => { try { return news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : "" } catch(e) { return "" } })()}
                   </div>
                 </Link>
               ))}

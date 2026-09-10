@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, Facebook, Twitter, Link as LinkIcon } from 'lucide-react';
+import { Share2, Link as LinkIcon } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function ShareButtons({ url, title }: { url: string; title: string }) {
@@ -51,17 +51,17 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
         href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} 
         target="_blank" 
         rel="noopener noreferrer"
-        className="bg-[#1877F2] text-white p-2 rounded-full hover:scale-110 transition-transform"
+        className="bg-[#1877F2] text-white px-3 py-1.5 rounded-full hover:scale-105 transition-transform text-xs font-bold flex items-center gap-1.5"
       >
-        <Facebook size={20} />
+        <span>Facebook</span>
       </a>
       <a 
         href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`} 
         target="_blank" 
         rel="noopener noreferrer"
-        className="bg-black text-white p-2 rounded-full hover:scale-110 transition-transform"
+        className="bg-black text-white px-3 py-1.5 rounded-full hover:scale-105 transition-transform text-xs font-bold flex items-center gap-1.5"
       >
-        <Twitter size={20} />
+        <span>X (Twitter)</span>
       </a>
       <button 
         onClick={handleShare}

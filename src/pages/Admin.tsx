@@ -397,7 +397,7 @@ export default function Admin() {
                   <input name="videoUrl" placeholder="Paste Video URL (e.g., YouTube embed)" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
                 </div>
 
-                <textarea name="content" required placeholder="News Content..." rows="5" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600"></textarea>
+                <textarea name="content" required placeholder="News Content..." rows={5} className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600"></textarea>
                 <button 
                   type="submit"
                   disabled={isProcessing}
@@ -491,18 +491,19 @@ export default function Admin() {
                     });
                   }
 
+                  const formEl = form.elements as any;
                   const member = {
-                    name: form.memberName.value,
-                    role: form.role.value,
-                    mobile: form.mobile.value,
-                    details: form.details.value,
+                    name: formEl['memberName']?.value || "",
+                    role: formEl['role']?.value || "",
+                    mobile: formEl['mobile']?.value || "",
+                    details: formEl['details']?.value || "",
                     photoUrl: finalPhotoUrl || "",
                     createdAt: new Date().toISOString()
                   };
                   await addDoc(collection(db, "team"), member);
                   form.reset();
                   alert("Team member added!");
-                } catch(err) {
+                } catch(err: any) {
                   console.error(err);
                   alert("Error adding team member: " + err.message);
                 } finally {
@@ -520,7 +521,7 @@ export default function Admin() {
                   <input name="photoUrl" placeholder="Paste Photo URL" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600" />
                 </div>
 
-                <textarea name="details" placeholder="Short description, area of coverage, or bio..." rows="3" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600"></textarea>
+                <textarea name="details" placeholder="Short description, area of coverage, or bio..." rows={3} className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-green-600"></textarea>
 
                 <button 
                   type="submit"

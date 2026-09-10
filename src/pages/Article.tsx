@@ -177,7 +177,7 @@ ${url}`;
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-y border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 gap-4">
             <div className="flex flex-col gap-1">
               <span className="font-bold text-slate-800 dark:text-slate-200">{language === 'hi' ? 'द्वारा' : 'By'} {article.author}</span>
-              <span>{language === 'hi' ? 'अपडेट:' : 'Updated:'} {article.updatedDate ? format(new Date(article.updatedDate), "MMM d, yyyy, h:mm a") : format(new Date(article.publicationDate || Date.now()), "MMM d, yyyy, h:mm a")}</span>
+              <span>{language === 'hi' ? 'अपडेट:' : 'Updated:'} {(() => { try { return article.updatedDate ? format(new Date(article.updatedDate), "MMM d, yyyy, h:mm a") : format(new Date(article.publicationDate || Date.now()), "MMM d, yyyy, h:mm a") } catch(e) { return "" } })()}</span>
             </div>
             
             <div className="flex items-center gap-3">
@@ -277,7 +277,7 @@ ${url}`;
                 <div key={c.id} className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-100">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-bold text-slate-900 dark:text-white">{c.name}</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{c.date ? format(new Date(c.date), "MMM d, yyyy") : "Unknown date"}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{(() => { try { return c.date ? format(new Date(c.date), "MMM d, yyyy") : "Unknown date" } catch(e) { return "" } })()}</span>
                   </div>
                   <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line">{c.text}</p>
                 </div>
