@@ -644,7 +644,7 @@ export default function Admin() {
                         <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">{article.category}</span>
                       </td>
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
-                        {new Date(article.publicationDate).toLocaleDateString()}
+                        {article.publicationDate ? new Date(article.publicationDate).toLocaleDateString() : "No Date"}
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
                         {article.videoUrl && (

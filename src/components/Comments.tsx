@@ -20,7 +20,7 @@ export default function Comments({ articleId }: { articleId: string }) {
         const q = query(collection(db, "comments"), where("articleId", "==", articleId));
         const snap = await getCachedDocs(q, 'cache-' + Date.now());
         const fetched = (snap || []) as Comment[];
-        fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        fetched.sort((a, b) => (new Date(b.createdAt || 0)).getTime() - (new Date(a.createdAt || 0)).getTime());
         setComments(fetched);
       } catch (err) {
         console.error(err);
@@ -97,7 +97,7 @@ export default function Comments({ articleId }: { articleId: string }) {
             <div key={c.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-slate-800">{c.authorName}</span>
-                <span className="text-xs text-slate-400">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
+                <span className="text-xs text-slate-400">{c.createdAt ? formatDistanceToNow(new Date(c.createdAt), { addSuffix: true }) : ""}</span>
               </div>
               <p className="text-slate-700 text-sm">{c.text}</p>
             </div>

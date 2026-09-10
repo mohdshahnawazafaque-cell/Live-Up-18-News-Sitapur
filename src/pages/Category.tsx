@@ -26,7 +26,7 @@ export default function Category() {
         const snap = await getCachedDocs(q, 'cache-' + Date.now());
         const fetchedArticles = (snap || []) as NewsArticle[];
         
-        fetchedArticles.sort((a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime());
+        fetchedArticles.sort((a, b) => (new Date(b.publicationDate || 0)).getTime() - (new Date(a.publicationDate || 0)).getTime());
         setArticles(fetchedArticles);
       } catch (err) {
         console.error(err);
@@ -87,7 +87,7 @@ export default function Category() {
                     {getLocalizedText(news, 'shortSummary', language)}
                   </p>
                   <div className="text-xs text-slate-400 mt-auto">
-                    {formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true })}
+                    {news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : ""}
                   </div>
                 </div>
               </Link>

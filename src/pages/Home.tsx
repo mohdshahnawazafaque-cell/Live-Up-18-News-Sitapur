@@ -142,7 +142,7 @@ export default function Home() {
                     {getLocalizedText(news, 'headline', language)}
                   </h4>
                   <div className="text-slate-500 dark:text-slate-400 text-xs mt-2">
-                    {formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true })}
+                    {news.publicationDate ? formatDistanceToNow(new Date(news.publicationDate), { addSuffix: true }) : ""}
                   </div>
                 </Link>
               ))}
