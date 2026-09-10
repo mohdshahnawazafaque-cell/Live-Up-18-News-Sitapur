@@ -65,7 +65,7 @@ export default function Team() {
               <div className="p-6 flex flex-col flex-1">
                 <h3 className="text-xl font-black text-slate-900 mb-1">{member.name}</h3>
                 
-                <a href={"tel:+91" + member.mobile.replace(/\D/g,'')} className="flex items-center gap-2 text-slate-600 mb-4 hover:text-red-600 transition-colors">
+                <a href={"tel:+91" + (member.mobile || "").replace(/\D/g,'')} className="flex items-center gap-2 text-slate-600 mb-4 hover:text-red-600 transition-colors">
                   <Phone size={16} />
                   <span className="font-semibold text-sm">{member.mobile}</span>
                 </a>

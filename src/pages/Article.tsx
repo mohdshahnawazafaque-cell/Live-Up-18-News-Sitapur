@@ -153,7 +153,7 @@ ${url}`;
             >
               <ArrowLeft size={20} />
             </button>
-            <Link to={`/category/${article.category.toLowerCase().replace(/ /g, '-')}`} className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-sm uppercase hover:bg-red-700 transition-colors">
+            <Link to={`/category/${(article.category || "").toLowerCase().replace(/ /g, '-')}`} className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-sm uppercase hover:bg-red-700 transition-colors">
               {article.category}
             </Link>
             {article.state && (
@@ -199,7 +199,7 @@ ${url}`;
           
           {article.videoUrl ? (
             <TVNewsFrame article={article} />
-          ) : !article.featuredImage.includes('picsum') && (
+          ) : (article.featuredImage && !article.featuredImage.includes('picsum')) && (
             <img loading="lazy" src={article.featuredImage} alt={getLocalizedText(article, 'headline', language)} className="w-full h-auto rounded-xl shadow-md object-cover max-h-[500px]" />
           )}
 

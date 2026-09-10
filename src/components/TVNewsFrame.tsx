@@ -49,7 +49,7 @@ export default function TVNewsFrame({ article }: { article: NewsArticle }) {
           {/* Location/Reporter Badge */}
           <div className="flex px-4 md:px-8 mb-[-1px] z-20">
             <div className="bg-blue-700 text-white px-4 py-1 font-bold text-xs md:text-sm uppercase shadow-lg border-l-4 border-red-600 rounded-tr-lg">
-              {article.category.replace('-', ' ')}
+              {(article.category || '').replace('-', ' ')}
             </div>
             {article.author && (
               <div className="bg-red-600 text-white px-4 py-1 font-bold text-xs md:text-sm shadow-lg rounded-tr-lg ml-1">
