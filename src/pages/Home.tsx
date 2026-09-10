@@ -1,4 +1,3 @@
-import YouTubeGallery from "../components/YouTubeGallery";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NewsArticle } from "../types";
@@ -7,6 +6,7 @@ import { useLanguage, getLocalizedText } from "../context/LanguageContext";
 import AdBanner from "../components/AdBanner";
 import PollWidget from "../components/PollWidget";
 import TrendingWidget from "../components/TrendingWidget";
+import LiveTVWidget from "../components/LiveTVWidget";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
@@ -19,6 +19,7 @@ export default function Home() {
   const [videos, setVideos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ [key: string]: NewsArticle[] }>({});
+  const [visibleNewsCount, setVisibleNewsCount] = useState(8);
 
   useEffect(() => {
     // Videos will be extracted from news articles with videoUrl
@@ -29,7 +30,9 @@ export default function Home() {
         const articles = await getCachedDocs(q, 'home-news');
 
         
-        const videoArticles = articles.filter(a => a.videoUrl);
+        // Filter out drafts for public view
+        const publishedArticles = articles.filter(a => a.status !== 'draft');
+        const videoArticles = publishedArticles.filter(a => a.videoUrl);
         setVideos(videoArticles.map(a => ({
           id: a.id,
           title: a.headline,
@@ -38,13 +41,13 @@ export default function Home() {
           date: a.publicationDate
         })));
 
-        if (articles.length > 0) {
-          setFeaturedNews(articles[0]);
-          setTopHeadlines(articles.slice(1, 5));
-          setLatestNews(articles.slice(5, 15));
+        if (publishedArticles.length > 0) {
+          setFeaturedNews(publishedArticles[0]);
+          setTopHeadlines(publishedArticles.slice(1, 5));
+          setLatestNews(publishedArticles.slice(5));
           
           const cats: { [key: string]: NewsArticle[] } = {};
-          articles.forEach(article => {
+          publishedArticles.forEach(article => {
             if (!cats[article.category]) cats[article.category] = [];
             if (cats[article.category].length < 4) {
               cats[article.category].push(article);
@@ -65,36 +68,10 @@ export default function Home() {
     <div className="space-y-12">
       
       {/* Top Ad/Banner Section */}
-      <section className="w-full">
-        <a href="#" className="block w-full overflow-hidden rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
-          <img loading="lazy" src="/banner1.png" alt="Live Up 18 News Promo" className="w-full h-auto object-cover max-h-[300px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-        </a>
-      </section>
+      <AdBanner position="home_top" />
 
       
-      {/* Live TV Section (Placeholder / Configurable) */}
-      <section className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800">
-        <div className="bg-red-600 text-white p-3 flex justify-between items-center">
-          <h2 className="text-xl font-black uppercase flex items-center gap-2">
-            <span className="w-3 h-3 bg-white rounded-full animate-pulse"></span>
-            LIVE TV
-          </h2>
-        </div>
-        <div className="w-full bg-black flex items-center justify-center relative">
-          <div className="w-full max-w-4xl mx-auto aspect-video">
-          <iframe 
-            width="100%" 
-            height="100%" 
-            src="https://www.youtube.com/embed/lHRd4ug_Yq8"
-            title="YouTube video player" 
-            frameBorder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowFullScreen
-            className="absolute inset-0"
-          ></iframe>
-          </div>
-        </div>
-      </section>
+      
 
       {error && <div className="bg-red-100 border-l-4 border-red-600 text-red-700 p-4 mb-8" role="alert"><p className="font-bold">Error loading news</p><p>{error}</p></div>}
       {/* Featured Section */}
@@ -160,7 +137,7 @@ export default function Home() {
           <h3 className="text-2xl font-black uppercase text-slate-900 dark:text-white">{language === 'hi' ? 'ताज़ा खबरें' : 'Latest News'}</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {latestNews.slice(0, 4).map(news => (
+          {latestNews.slice(0, visibleNewsCount).map(news => (
             <Link key={news.id} to={`/article/${news.id}`} className="group flex flex-col gap-3">
               <div className="overflow-hidden rounded-lg aspect-video relative">
                 <img loading="lazy" 
@@ -179,14 +156,10 @@ export default function Home() {
         </div>
       </section>
 
-            <YouTubeGallery />
+            
 
       {/* Middle Ad/Banner Section */}
-      <section className="w-full my-8">
-        <a href="#" className="block w-full overflow-hidden rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
-          <img loading="lazy" src="/banner2.png" alt="Live Up 18 News Promo" className="w-full h-auto object-cover max-h-[300px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-        </a>
-      </section>
+      <AdBanner position="home_middle" className="my-8" />
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -16,8 +16,11 @@ export default function TrendingWidget() {
       try {
         // Just pulling recent news and shuffling to simulate 'trending' if view count isn't robustly tracked due to quota.
         // Ideally: orderBy("views", "desc")
-        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(10));
+        const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(20));
         const articles = await getCachedDocs(q, 'trending-news');
+        
+        // Sort locally by views (descending)
+        articles.sort((a, b) => (b.views || 0) - (a.views || 0));
         
         // Pseudo-randomize top 5 for demo, or just use the first 5.
         // Let's just pick top 5 to represent trending.

@@ -15,7 +15,7 @@ export default function Team() {
     const fetchTeam = async () => {
       try {
         const q = query(collection(db, "team"), orderBy("createdAt", "asc"));
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, 'Team-data');
         const members = (snap || []) as TeamMember[];
         setTeam(members);
       } catch (err) {

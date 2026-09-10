@@ -2,6 +2,23 @@ import { Query, getDocs, DocumentSnapshot, getDoc, DocumentReference } from "fir
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
+function safeSetStorage(key: string, value: string) {
+  try {
+    safeSetStorage(key, value);
+  } catch (e: any) {
+    if (e.name === 'QuotaExceededError' || e.message.includes('exceeded the quota')) {
+      console.warn('Session storage quota exceeded. Clearing cache and trying again.');
+      sessionStorage.clear();
+      try {
+        safeSetStorage(key, value);
+      } catch (e2) {
+        console.warn('Still exceeding quota after clear. Skipping cache for this item.');
+      }
+    }
+  }
+}
+
+
 export async function getCachedDocs(q: Query, cacheKey: string) {
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) {
@@ -18,7 +35,7 @@ export async function getCachedDocs(q: Query, cacheKey: string) {
       data.push({ id: doc.id, ...doc.data() });
     });
     
-    sessionStorage.setItem(cacheKey, JSON.stringify({
+    safeSetStorage(cacheKey, JSON.stringify({
       data,
       timestamp: Date.now()
     }));
@@ -49,7 +66,7 @@ export async function getCachedDoc(ref: DocumentReference, cacheKey: string) {
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
       const data = { id: docSnap.id, ...docSnap.data() };
-      sessionStorage.setItem(cacheKey, JSON.stringify({
+      safeSetStorage(cacheKey, JSON.stringify({
         data,
         timestamp: Date.now()
       }));

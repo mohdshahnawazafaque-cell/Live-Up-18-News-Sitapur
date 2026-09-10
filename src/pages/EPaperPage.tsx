@@ -16,7 +16,7 @@ export default function EPaperPage() {
     const fetchEPapers = async () => {
       try {
         const q = query(collection(db, "epapers"), orderBy("date", "desc"));
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, 'EPaperPage-data');
         const fetched: EPaper[] = [];
         snap.forEach(doc => {
           fetched.push({ id: doc.id, ...doc.data() } as EPaper);

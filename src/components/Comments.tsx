@@ -18,7 +18,7 @@ export default function Comments({ articleId }: { articleId: string }) {
     const fetchComments = async () => {
       try {
         const q = query(collection(db, "comments"), where("articleId", "==", articleId));
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, `comments-${articleId}`);
         const fetched = (snap || []) as Comment[];
         fetched.sort((a, b) => (new Date(b.createdAt || 0)).getTime() - (new Date(a.createdAt || 0)).getTime());
         setComments(fetched);

@@ -1,11 +1,12 @@
 import React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, X, Moon, Sun, PhoneCall } from "lucide-react";
+import { Search, Menu, X, Moon, Sun, PhoneCall, Bookmark, Film } from "lucide-react";
 import { format } from "date-fns";
 import { hi, enUS } from "date-fns/locale";
 import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
+import InstallPWA from "./InstallPWA";
 
 const NAV_ITEMS = [
   { en: "HOME", hi: "होम", path: "/" },
@@ -70,6 +71,13 @@ export default function Header() {
             >
               Hindi News
             </button>
+            <Link to="/shorts" className="ml-2 p-1 rounded-full hover:bg-slate-800 transition-colors text-slate-300 hover:text-red-400" title="News Shorts">
+              <Film size={16} />
+            </Link>
+            <Link to="/bookmarks" className="ml-2 p-1 rounded-full hover:bg-slate-800 transition-colors text-slate-300 hover:text-red-400" title="Saved News">
+              <Bookmark size={16} />
+            </Link>
+            <InstallPWA />
             <button 
               onClick={toggleTheme} 
               className="ml-2 p-1 rounded-full hover:bg-slate-800 transition-colors"

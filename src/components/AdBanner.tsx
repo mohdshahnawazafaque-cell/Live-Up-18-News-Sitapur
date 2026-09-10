@@ -17,7 +17,7 @@ export default function AdBanner({ position, className = "" }: { position: strin
           where("position", "==", position),
           where("active", "==", true)
         );
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, `ad-${position}`);
         if (snap && snap.length > 0) {
           // If multiple ads for the same position, pick a random one
           const ads = snap as Advertisement[];

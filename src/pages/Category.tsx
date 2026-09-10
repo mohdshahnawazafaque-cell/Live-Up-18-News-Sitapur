@@ -23,7 +23,7 @@ export default function Category() {
         const q = query(collection(db, "news"), where("category", "==", categoryName));
         // Note: orderBy("publicationDate", "desc") requires a composite index if where() is used.
         // We'll fetch and sort in client to avoid index requirement for now.
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, `category-${id}`);
         const fetchedArticles = (snap || []) as NewsArticle[];
         
         fetchedArticles.sort((a, b) => (new Date(b.publicationDate || 0)).getTime() - (new Date(a.publicationDate || 0)).getTime());

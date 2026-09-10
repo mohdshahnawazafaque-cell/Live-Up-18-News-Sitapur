@@ -18,7 +18,7 @@ export default function Search() {
       setLoading(true);
       try {
         const q = fsQuery(collection(db, "news"), orderBy("publicationDate", "desc"), limit(100));
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, `search-${searchQuery}`);
         const articles: NewsArticle[] = [];
         snap.forEach(doc => articles.push({ id: doc.id, ...doc.data() } as NewsArticle));
         

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Category from "./pages/Category";
@@ -10,6 +11,10 @@ import Admin from "./pages/Admin";
 import Search from "./pages/Search";
 import Team from "./pages/Team";
 import { LanguageProvider } from "./context/LanguageContext";
+import { BookmarkProvider } from "./context/BookmarkContext";
+import { HelmetProvider } from "react-helmet-async";
+import Bookmarks from "./pages/Bookmarks";
+import Shorts from "./pages/Shorts";
 import { ThemeProvider } from "./context/ThemeContext";
 
 export default function App() {
@@ -47,8 +52,11 @@ export default function App() {
 
   return (
     <ThemeProvider>
+      <HelmetProvider>
+    <BookmarkProvider>
       <LanguageProvider>
         <BrowserRouter>
+        <ScrollToTop />
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
@@ -60,6 +68,8 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </LanguageProvider>
+      </BookmarkProvider>
+    </HelmetProvider>
     </ThemeProvider>
   );
 }

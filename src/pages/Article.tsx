@@ -6,19 +6,23 @@ import { format } from "date-fns";
 import { hi } from "date-fns/locale";
 import { Share2, MessageCircle, Link2, ArrowLeft, Send } from "lucide-react";
 import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";
+import { useBookmarks } from "../context/BookmarkContext";
+import { Bookmark } from "lucide-react";
 import AdBanner from "../components/AdBanner";
 import ShareButtons from "../components/ShareButtons";
 import Comments from "../components/Comments";
-import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { getCachedDoc, getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
 import YouTubeGallery from "../components/YouTubeGallery";
 import TVNewsFrame from "../components/TVNewsFrame";
+import SEO from "../components/SEO";
 
 export default function Article() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [reporter, setReporter] = useState<TeamMember | null>(null);
   const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
@@ -42,15 +46,22 @@ export default function Article() {
         if (docSnap.exists()) {
           const data = { id: docSnap.id, ...docSnap.data() } as NewsArticle;
           setArticle(data);
+          
+          // Increment views asynchronously
+          if (data.id) {
+            updateDoc(doc(db, "news", data.id), {
+                views: increment(1)
+            }).catch(e => console.error("Could not update views:", e));
+          }
           setComments((data as any).comments || []);
           
           // Fetch related
           const q = query(collection(db, "news"), where("category", "==", data.category), limit(5));
-          const relatedSnap = await getCachedDocs(q, 'cache-' + Date.now());
+          const relatedSnap = await getCachedDocs(q, 'related-' + data.category);
           const relatedArticles: NewsArticle[] = [];
-          relatedSnap.forEach(rDoc => {
+          relatedSnap.forEach((rDoc: any) => {
             if (rDoc.id !== id) {
-              relatedArticles.push({ id: rDoc.id, ...rDoc.data() } as NewsArticle);
+              relatedArticles.push(rDoc as NewsArticle);
             }
           });
           setRelated(relatedArticles);
@@ -176,8 +187,12 @@ ${url}`;
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-y border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 gap-4">
             <div className="flex flex-col gap-1">
-              <span className="font-bold text-slate-800 dark:text-slate-200">{language === 'hi' ? 'द्वारा' : 'By'} {article.author}</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">{language === 'hi' ? 'संवाददाता:' : 'Correspondent:'} {article.author}</span>
               <span>{language === 'hi' ? 'अपडेट:' : 'Updated:'} {(() => { try { return article.updatedDate ? format(new Date(article.updatedDate), "MMM d, yyyy, h:mm a") : format(new Date(article.publicationDate || Date.now()), "MMM d, yyyy, h:mm a") } catch(e) { return "" } })()}</span>
+              <span className="flex items-center gap-1 ml-4 text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full font-bold">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                {article.views ? article.views + 1 : 1} {language === 'hi' ? 'व्यूज' : 'Views'}
+              </span>
             </div>
             
             <div className="flex items-center gap-3">

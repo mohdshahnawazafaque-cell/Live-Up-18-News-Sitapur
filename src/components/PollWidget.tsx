@@ -16,7 +16,7 @@ export default function PollWidget() {
     const fetchPoll = async () => {
       try {
         const q = query(collection(db, "polls"), where("active", "==", true));
-        const snap = await getCachedDocs(q, 'cache-' + Date.now());
+        const snap = await getCachedDocs(q, 'PollWidget-data');
         if (snap && snap.length > 0) {
           const pollData = snap[0] as Poll;
           setPoll(pollData);

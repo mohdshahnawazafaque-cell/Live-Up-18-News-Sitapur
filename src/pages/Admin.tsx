@@ -1,16 +1,19 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper, Edit, X, MonitorPlay } from "lucide-react";
+import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper, Edit, X, MonitorPlay, BarChart2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { NewsArticle } from "../types";
 import { getEmbedUrl } from "../lib/youtube";
 import { useLanguage, getLocalizedText } from "../context/LanguageContext";
-import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, addDoc, setDoc, updateDoc, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, addDoc, setDoc, updateDoc, where, getDoc } from "firebase/firestore";
 import { db, storage, auth } from "../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { signInAnonymously } from "firebase/auth";
 
 export default function Admin() {
+  const [contentValue, setContentValue] = useState("");
+  const [contentEnValue, setContentEnValue] = useState("");
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("adminToken") !== null);
@@ -20,6 +23,7 @@ export default function Admin() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [sources, setSources] = useState<string[]>([]);
   const [newSource, setNewSource] = useState("");
+  const [liveUrl, setLiveUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
@@ -30,6 +34,20 @@ export default function Admin() {
     }
   }, [isLoggedIn]);
 
+  
+    const handleSaveLiveUrl = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsProcessing(true);
+        try {
+            await setDoc(doc(db, "siteConfig", "global"), { liveTvUrl: liveUrl }, { merge: true });
+            alert("Live TV URL saved successfully!");
+        } catch (error) {
+            console.error("Error saving Live TV URL:", error);
+            alert("Error saving Live TV URL");
+        }
+        setIsProcessing(false);
+    };
+    
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -220,6 +238,53 @@ export default function Admin() {
         </button>
       </header>
 
+      
+      {/* Analytics Dashboard */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <BarChart2 className="text-blue-600" /> Views Analytics
+        </h2>
+        {news.length > 0 ? (
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={news.slice(0, 10).map(n => ({ name: n.headline.substring(0, 15) + '...', views: n.views || 0 })).sort((a,b) => b.views - a.views)}>
+                <XAxis dataKey="name" tick={{fontSize: 10}} interval={0} angle={-45} textAnchor="end" height={60} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="views" fill="#2563eb" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm">No data available for analytics.</p>
+        )}
+      </div>
+    
+
+      {/* Live TV Setting */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <MonitorPlay className="text-red-600" /> Live TV Setting
+        </h2>
+        <form onSubmit={handleSaveLiveUrl} className="flex gap-4">
+          <input
+            type="url"
+            value={liveUrl}
+            onChange={(e) => setLiveUrl(e.target.value)}
+            placeholder="YouTube Live URL or Stream Link (e.g. https://youtube.com/...)"
+            className="flex-1 border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-600"
+          />
+          <button 
+            type="submit" 
+            disabled={isProcessing}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded transition-colors"
+          >
+            {isProcessing ? 'Saving...' : 'Save Live URL'}
+          </button>
+        </form>
+        <p className="text-xs text-slate-500 mt-2">Set this URL to show the "Live TV" frame on the website. Leave empty to hide it.</p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Sidebar Controls */}
@@ -280,6 +345,8 @@ export default function Admin() {
                   await addDoc(collection(db, "news"), newsItem);
       sessionStorage.clear(); // Clear cache so new news appears immediately
                   form.reset();
+                  setContentValue("");
+                  setContentEnValue("");
                   fetchData();
                   alert("News Added!");
                 } catch(err: any) {
@@ -455,7 +522,15 @@ export default function Admin() {
                 <input name="question" required placeholder="Poll Question (e.g. Will it rain today?)" className="border border-slate-300 rounded px-3 py-2" />
                 <input name="opt1" required placeholder="Option 1 (e.g. Yes)" className="border border-slate-300 rounded px-3 py-2" />
                 <input name="opt2" required placeholder="Option 2 (e.g. No)" className="border border-slate-300 rounded px-3 py-2" />
-                <button type="submit" disabled={isProcessing} className="bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 disabled:bg-slate-400">
+                
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-bold text-slate-700">Status</label>
+                <select name="status" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-600 bg-white">
+                  <option value="published">Published</option>
+                  <option value="draft">Save as Draft</option>
+                </select>
+              </div>
+              <button type="submit" disabled={isProcessing} className="bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 disabled:bg-slate-400">
                   {isProcessing ? "Adding..." : "Create Poll"}
                 </button>
               </form>
