@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, X, Moon, Sun, PhoneCall, Bookmark, Film, Languages } from "lucide-react";
+import { Search, Menu, X, Moon, Sun, PhoneCall, Bookmark, Film, Languages, Smartphone } from "lucide-react";
 import { FaWhatsapp } from 'react-icons/fa';
 import { format } from "date-fns";
 import { hi, enUS } from "date-fns/locale";
@@ -55,6 +55,10 @@ export default function Header() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex justify-between items-center text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest">
           <div>{currentDate}</div>
           <div className="flex items-center gap-6">
+            <Link to="/install" className="hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1 font-bold text-red-600 dark:text-red-400">
+              <Smartphone size={13} />
+              {language === 'hi' ? 'ऐप इंस्टॉल / शेयर' : 'Install / Share App'}
+            </Link>
             <Link to="/admin" className="hover:text-red-600 dark:hover:text-red-500 transition-colors flex items-center gap-1">
               {language === 'hi' ? 'एडमिन' : 'Admin'}
             </Link>
@@ -142,6 +146,15 @@ export default function Header() {
           <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-3">
             <InstallPWA className="flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 text-white font-bold py-2.5 px-3 rounded-lg text-sm transition-colors shadow-sm w-full" />
             <PushNotificationManager className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 font-bold py-2.5 px-3 rounded-lg text-sm transition-colors shadow-sm w-full" />
+            
+            <Link 
+              to="/install" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="col-span-2 flex items-center justify-center gap-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 font-bold py-2.5 px-4 rounded-lg text-xs transition-colors shadow-sm"
+            >
+              <Smartphone size={15} className="text-red-600" />
+              <span>{language === 'hi' ? '📲 ऐप इंस्टॉल व शेयर लिंक (WhatsApp पर शेयर करें)' : '📲 App Install & Share Link'}</span>
+            </Link>
             
             <div className="flex bg-white dark:bg-black rounded-lg p-1 justify-between col-span-2 shadow-sm border border-slate-200 dark:border-slate-800">
               <button onClick={() => { setLanguage('en'); setIsMobileMenuOpen(false); }} className={`flex-1 text-center py-2 text-xs font-bold rounded ${language === 'en' ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-600 dark:text-slate-400'}`}>English</button>

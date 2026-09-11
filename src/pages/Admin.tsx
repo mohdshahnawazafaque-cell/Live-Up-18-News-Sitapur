@@ -30,8 +30,41 @@ export default function Admin() {
   const [donations, setDonations] = useState<any[]>([]);
   const [totalDonations, setTotalDonations] = useState(0);
   const [successfulDonationsCount, setSuccessfulDonationsCount] = useState(0);
+  const [donationSearch, setDonationSearch] = useState("");
+  const [donationStatusFilter, setDonationStatusFilter] = useState("all");
+  const [viewingDonation, setViewingDonation] = useState<any | null>(null);
+  const receiptRef = React.useRef<HTMLDivElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
+  
+  const handleDownloadPDF = async () => {
+    if (!receiptRef.current) return;
+    try {
+      const canvas = await html2canvas(receiptRef.current, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`receipt-${viewingDonation?.receiptNumber || 'donation'}.pdf`);
+    } catch (e) {
+      console.error('Error generating PDF:', e);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const filteredDonations = donations.filter(d => {
+    const matchesSearch = !donationSearch || 
+      (d.donorName || '').toLowerCase().includes(donationSearch.toLowerCase()) ||
+      (d.mobile || '').includes(donationSearch) ||
+      (d.receiptNumber || '').toLowerCase().includes(donationSearch.toLowerCase()) ||
+      (d.paymentRef || '').toLowerCase().includes(donationSearch.toLowerCase());
+    const matchesStatus = donationStatusFilter === 'all' || d.status === donationStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
   
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [editingDonationId, setEditingDonationId] = useState<string | null>(null);

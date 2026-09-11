@@ -14,9 +14,9 @@ export default defineConfig(() => {
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
         id: '/',
-        name: 'Live UP 18 News',
-        short_name: 'Live UP 18',
-        description: 'उत्तर प्रदेश, भारत और दुनिया भर की ताज़ा ख़बरों के लिए आपका भरोसेमंद स्रोत।',
+        name: 'LIVE UP 18 NEWS',
+        short_name: 'LIVE UP 18',
+        description: 'उत्तर प्रदेश, भारत और दुनिया भर की ताज़ा ख़बरों के लिए आपका भरोसेमंद डिजिटल न्यूज़ पोर्टल।',
         theme_color: '#dc2626',
         background_color: '#ffffff',
         display: 'standalone',
@@ -24,24 +24,24 @@ export default defineConfig(() => {
         scope: '/',
         icons: [
           {
-            src: '/icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          },
-          {
-            src: 'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=192&h=192&fit=crop&q=80',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/jpeg',
-            purpose: 'any'
+            type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: 'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=512&h=512&fit=crop&q=80',
+            src: '/pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/jpeg',
-            purpose: 'any'
-          }
-        ]
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
       },
       devOptions: {
         enabled: true,

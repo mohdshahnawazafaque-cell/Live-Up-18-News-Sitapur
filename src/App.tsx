@@ -15,6 +15,7 @@ import { BookmarkProvider } from "./context/BookmarkContext";
 import { HelmetProvider } from "react-helmet-async";
 import Bookmarks from "./pages/Bookmarks";
 import Shorts from "./pages/Shorts";
+import InstallPage from "./pages/InstallPage";
 import { ThemeProvider } from "./context/ThemeContext";
 
 export default function App() {
@@ -64,6 +65,14 @@ export default function App() {
               <Route path="article/:id" element={<Article />} />
               <Route path="search" element={<Search />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="districts" element={<Districts />} />
+              <Route path="live-studio" element={<LiveStudio />} />
+              <Route path="team" element={<Team />} />
+              <Route path="bookmarks" element={<Bookmarks />} />
+              <Route path="shorts" element={<Shorts />} />
+              <Route path="install" element={<InstallPage />} />
+              <Route path="download" element={<InstallPage />} />
+              <Route path="app" element={<InstallPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Download, Smartphone } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
 export default function Footer() {
@@ -51,6 +52,25 @@ export default function Footer() {
                   {language === 'hi' ? 'जुड़ें' : 'Join'}
                 </button>
               </form>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-slate-800 flex flex-col gap-2">
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Smartphone size={14} className="text-red-500" />
+                {language === 'hi' ? 'मोबाइल ऐप डाउनलोड व शेयर लिंक' : 'Mobile App Download & Share'}
+              </span>
+              <p className="text-xs text-slate-400">
+                {language === 'hi' 
+                  ? 'आधिकारिक ऐप सीधे फ़ोन में इंस्टॉल करें या दोस्तों को शेयर करें।' 
+                  : 'Install official app directly or share install link with others.'}
+              </p>
+              <Link
+                to="/install"
+                className="inline-flex items-center justify-center gap-2 bg-red-700 hover:bg-red-600 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition-colors shadow-sm w-fit mt-1"
+              >
+                <Download size={14} />
+                {language === 'hi' ? 'ऐप इंस्टॉल पेज व शेयर लिंक खोलें' : 'Install Page & Share Link'}
+              </Link>
             </div>
           </div>
           

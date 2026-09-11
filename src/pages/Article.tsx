@@ -3,16 +3,16 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { NewsArticle, TeamMember } from "../types";
 import { format } from "date-fns";
-import { hi } from "date-fns/locale";
-import { Share2, MessageCircle, Link2, ArrowLeft, Send, Tag } from "lucide-react";
+import { hi, enUS } from "date-fns/locale";
+import { Share2, MessageCircle, Link2, ArrowLeft, Send, Tag, Bookmark, ThumbsUp, Flame, ThumbsDown, User, Calendar } from "lucide-react";
 import { useLanguage, getLocalizedText, getLocalizedArray } from "../context/LanguageContext";
 import { useBookmarks } from "../context/BookmarkContext";
-import { Bookmark, ThumbsUp, Flame, ThumbsDown, Tag } from "lucide-react";
 import { FaWhatsapp, FaFacebook, FaTwitter } from 'react-icons/fa';
 import AdBanner from "../components/AdBanner";
 import ShareButtons from "../components/ShareButtons";
 import ReadAloudButton from "../components/ReadAloudButton";
 import Comments from "../components/Comments";
+import TrendingWidget from "../components/TrendingWidget";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { getCachedDoc, getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
@@ -111,7 +111,7 @@ export default function Article() {
   
   const handleShare = (platform: string) => {
     const url = window.location.href;
-    const title = article?.title || "LIVE UP 18 NEWS";
+    const title = article?.headline || "LIVE UP 18 NEWS";
     
     if (platform === 'whatsapp') {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(title + " - " + url)}`, '_blank');
@@ -124,7 +124,7 @@ export default function Article() {
 
   const handleShareToPlatform = (platform: string) => {
     const url = window.location.href;
-    const titleText = article?.title || "LIVE UP 18 NEWS";
+    const titleText = article?.headline || "LIVE UP 18 NEWS";
     
     if (platform === 'whatsapp') {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(titleText + " - " + url)}`, '_blank');
@@ -228,9 +228,17 @@ ${url}`;
             <div className="flex items-center">
               <Calendar size={16} className="mr-2" />
               <time dateTime={article.publicationDate}>
-                {format(new Date(article.publicationDate), "dd MMMM yyyy, p", { 
-                  locale: language === 'hi' ? hi : enUS 
-                })}
+                {(() => {
+                  try {
+                    const d = article.publicationDate ? new Date(article.publicationDate) : null;
+                    if (d && !isNaN(d.getTime())) {
+                      return format(d, "dd MMMM yyyy, p", { locale: language === 'hi' ? hi : enUS });
+                    }
+                    return '';
+                  } catch {
+                    return '';
+                  }
+                })()}
               </time>
             </div>
             <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
@@ -286,7 +294,7 @@ ${url}`;
         {/* Sidebar */}
         <aside className="lg:w-1/3 space-y-8">
           <AdBanner position="article_sidebar" />
-          <TrendingWidget currentArticleId={article.id} />
+          <TrendingWidget />
         </aside>
       </div>
     </div>

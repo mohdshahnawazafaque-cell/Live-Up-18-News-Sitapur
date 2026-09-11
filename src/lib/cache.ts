@@ -1,16 +1,16 @@
-import { Query, getDocs, DocumentSnapshot, getDoc, DocumentReference } from "firebase/firestore";
+import { Query, getDocs, getDoc, DocumentReference } from "firebase/firestore";
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 function safeSetStorage(key: string, value: string) {
   try {
-    safeSetStorage(key, value);
+    sessionStorage.setItem(key, value);
   } catch (e: any) {
-    if (e.name === 'QuotaExceededError' || e.message.includes('exceeded the quota')) {
+    if (e?.name === 'QuotaExceededError' || e?.message?.includes('exceeded the quota')) {
       console.warn('Session storage quota exceeded. Clearing cache and trying again.');
-      sessionStorage.clear();
       try {
-        safeSetStorage(key, value);
+        sessionStorage.clear();
+        sessionStorage.setItem(key, value);
       } catch (e2) {
         console.warn('Still exceeding quota after clear. Skipping cache for this item.');
       }
@@ -18,14 +18,18 @@ function safeSetStorage(key: string, value: string) {
   }
 }
 
-
 export async function getCachedDocs(q: Query, cacheKey: string) {
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
-    if (Date.now() - timestamp < CACHE_DURATION_MS) {
-      return data;
+  let cached: string | null = null;
+  try {
+    cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION_MS && Array.isArray(data) && data.length > 0) {
+        return data;
+      }
     }
+  } catch (e) {
+    console.warn("SessionStorage read error for key", cacheKey, e);
   }
 
   try {
@@ -35,31 +39,38 @@ export async function getCachedDocs(q: Query, cacheKey: string) {
       data.push({ id: doc.id, ...doc.data() });
     });
     
-    safeSetStorage(cacheKey, JSON.stringify({
-      data,
-      timestamp: Date.now()
-    }));
+    if (data.length > 0) {
+      safeSetStorage(cacheKey, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+    }
     
     return data;
   } catch (error: any) {
-    if (error?.message?.includes("Quota limit exceeded")) {
-      if (cached) {
+    console.error("Firestore getDocs error for key", cacheKey, error);
+    if (cached) {
+      try {
         return JSON.parse(cached).data;
-      }
-      // If no cache exists, return empty array instead of throwing to avoid breaking the app UI
-      return []; 
+      } catch {}
     }
-    throw error;
+    // Return empty array instead of crashing caller
+    return [];
   }
 }
 
 export async function getCachedDoc(ref: DocumentReference, cacheKey: string) {
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
-    if (Date.now() - timestamp < CACHE_DURATION_MS) {
-      return data;
+  let cached: string | null = null;
+  try {
+    cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION_MS && data) {
+        return data;
+      }
     }
+  } catch (e) {
+    console.warn("SessionStorage read error for key", cacheKey, e);
   }
 
   try {
@@ -74,13 +85,12 @@ export async function getCachedDoc(ref: DocumentReference, cacheKey: string) {
     }
     return null;
   } catch (error: any) {
-    if (error?.message?.includes("Quota limit exceeded")) {
-      if (cached) {
+    console.error("Firestore getDoc error for key", cacheKey, error);
+    if (cached) {
+      try {
         return JSON.parse(cached).data;
-      }
-      // If no cache exists, return null instead of throwing
-      return null;
+      } catch {}
     }
-    throw error;
+    return null;
   }
 }

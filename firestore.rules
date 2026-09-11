@@ -25,5 +25,8 @@ service cloud.firestore {
     match /team/{memberId} {
       allow read, write: if true;
     }
+    match /siteConfig/{configId} {
+      allow read, write: if true;
+    }
   }
 }

@@ -21,6 +21,8 @@ export interface NewsArticle {
   isBreaking?: boolean;
   videoUrl?: string;
   views?: number;
+  tags?: string[];
+  tagsEn?: string[];
   status?: "published" | "draft";
 }
 
