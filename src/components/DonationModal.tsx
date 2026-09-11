@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Heart, Download, Printer, CheckCircle } from 'lucide-react';
+import { X, Heart, Download, Printer, CheckCircle, Copy, Check, AlertTriangle, Smartphone, QrCode } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useLanguage } from '../context/LanguageContext';
@@ -47,7 +47,57 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
   
   const [receiptData, setReceiptData] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [upiCopied, setUpiCopied] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  const upiIdString = "9956078419@ybl";
+
+  const handleCopyUPI = async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(upiIdString);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = upiIdString;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setUpiCopied(true);
+      setTimeout(() => setUpiCopied(false), 3000);
+    } catch (e) {
+      console.error("Failed to copy UPI ID:", e);
+    }
+  };
+
+  const handleDirectPay = (targetApp: 'phonepe' | 'gpay' | 'paytm' | 'upi') => {
+    const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+    const payeeName = "MOHD%20SHAHNAWAZ";
+    const upiQuery = `pa=${encodeURIComponent(upiIdString)}&pn=${payeeName}&am=${amount}&cu=INR&tn=LiveUP18%20News%20Donation`;
+
+    if (targetApp === 'phonepe') {
+      if (isAndroid) {
+        window.location.href = `intent://pay?${upiQuery}#Intent;scheme=upi;package=com.phonepe.app;end`;
+      } else {
+        window.location.href = `phonepe://pay?${upiQuery}`;
+      }
+    } else if (targetApp === 'gpay') {
+      if (isAndroid) {
+        window.location.href = `intent://pay?${upiQuery}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+      } else {
+        window.location.href = `gpay://upi/pay?${upiQuery}`;
+      }
+    } else if (targetApp === 'paytm') {
+      if (isAndroid) {
+        window.location.href = `intent://pay?${upiQuery}#Intent;scheme=upi;package=net.one97.paytm;end`;
+      } else {
+        window.location.href = `paytmmp://pay?${upiQuery}`;
+      }
+    } else {
+      window.location.href = `upi://pay?${upiQuery}`;
+    }
+  };
 
 
 
@@ -373,65 +423,157 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
           
           {/* STEP 2.5: Payment Info */}
           {step === 'payment_info' && (
-            <div className="animate-[fadeIn_0.3s_ease-out]">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 text-center">
-                {language === 'hi' ? 'पेमेंट पूरा करें' : 'Complete Your Payment'}
-              </h3>
-              <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
-                {language === 'hi' ? 'मोबाइल पर सीधा भुगतान करें या QR कोड स्कैन करें' : 'Pay directly via mobile app or scan the QR code'}
-              </p>
-              
-              <div className="bg-white border-2 border-red-100 rounded-xl p-6 mb-6 flex flex-col items-center justify-center shadow-sm">
-                
-                {/* Real QR Code Generation */}
-                
-                {/* Mobile Intent Button & QR Code */}
-                <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm shrink-0 flex flex-col items-center">
-                  <div className="hidden md:block">
-                    <QRCodeSVG 
-                      value={`upi://pay?pa=liveup18news@axl&pn=LIVE%20UP%2018%20NEWS&am=${amount}&cu=INR`} 
-                      size={160} 
-                      level={"H"}
-                      includeMargin={true}
-                    />
-                    <div className="text-center mt-2 text-xs font-bold text-slate-500">SCAN TO PAY ₹{amount}</div>
-                  </div>
-                  
-                  {/* Mobile Deep Link Button (Visible only on mobile) */}
-                  <div className="md:hidden w-full flex flex-col items-center justify-center py-4">
-                    <a 
-                      href={`upi://pay?pa=liveup18news@axl&pn=LIVE%20UP%2018%20NEWS&am=${amount}&cu=INR`}
-                      className="bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold w-full text-center shadow-lg mb-2 flex items-center justify-center gap-2"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      {language === 'hi' ? 'UPI ऐप से भुगतान करें' : 'Pay via UPI App'}
-                    </a>
-                    <p className="text-[10px] text-slate-500 text-center font-bold px-4">
-                      (Google Pay, PhonePe, Paytm, etc.)
-                    </p>
-                  </div>
+            <div className="animate-[fadeIn_0.3s_ease-out] space-y-4">
+              <div className="text-center">
+                <div className="inline-block bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 font-extrabold text-sm px-3 py-1 rounded-full mb-2">
+                  {language === 'hi' ? 'सहयोग राशि' : 'Donation Amount'}: ₹{amount}
                 </div>
-
-                
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                  {language === 'hi' ? 'पेमेंट का तरीका चुनें' : 'Choose Payment Method'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  {language === 'hi' 
+                    ? 'QR कोड स्कैन करें, UPI ID कॉपी करें या ऐप लिंक पर टैप करें:' 
+                    : 'Scan QR Code, copy UPI ID, or tap UPI app link:'}
+                </p>
               </div>
 
-              
+              {/* QR Code Container (Visible on both Mobile & Desktop) */}
+              <div className="bg-slate-50 dark:bg-slate-900 border-2 border-red-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center shadow-sm">
+                <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-md">
+                  <QRCodeSVG 
+                    value={`upi://pay?pa=${upiIdString}&pn=LIVE%20UP%2018%20NEWS&am=${amount}&cu=INR&tn=LiveUP18%20News%20Donation`} 
+                    size={170} 
+                    level={"H"}
+                    includeMargin={true}
+                  />
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <QrCode size={16} className="text-red-600" />
+                  <span>{language === 'hi' ? `Google Pay / PhonePe / Paytm से ₹${amount} स्कैन करें` : `Scan ₹${amount} via any UPI App`}</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {language === 'hi' 
+                    ? '📱 मोबाइल पर: स्क्रीनशॉट लेकर GPay/PhonePe की गैलरी स्कैनर से स्कैन करें' 
+                    : '📱 Mobile: Take screenshot & scan from GPay/PhonePe gallery'}
+                </p>
+              </div>
 
-              <div className="flex gap-3">
+              {/* 1-Click Copy UPI ID Section */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                    {language === 'hi' ? 'आधिकारिक UPI ID' : 'Official UPI ID'}:
+                  </span>
+                  {upiCopied && (
+                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      <Check size={13} /> {language === 'hi' ? 'कॉपी हो गया!' : 'Copied!'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 rounded-lg font-mono font-bold text-sm text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 select-all">
+                    {upiIdString}
+                  </div>
+                  <button
+                    onClick={handleCopyUPI}
+                    type="button"
+                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                      upiCopied 
+                        ? 'bg-emerald-600 text-white' 
+                        : 'bg-red-600 hover:bg-red-700 text-white shadow-sm'
+                    }`}
+                  >
+                    {upiCopied ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{upiCopied ? (language === 'hi' ? 'कॉपी हुआ' : 'Copied') : (language === 'hi' ? 'कॉपी करें' : 'Copy ID')}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  {language === 'hi' 
+                    ? '👉 इसे कॉपी करके अपने Google Pay / PhonePe में "Pay to UPI ID" में पेस्ट करें।' 
+                    : '👉 Copy this and paste in Google Pay / PhonePe "Pay to UPI ID".'}
+                </p>
+              </div>
+
+              {/* Direct 1-Click UPI Payment App Buttons */}
+              <div className="space-y-2.5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">
+                  {language === 'hi' ? 'सीधा भुगतान के लिए ऐप चुनें (1-Click Pay)' : 'Select App for 1-Click Payment'}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* PhonePe */}
+                  <button
+                    type="button"
+                    onClick={() => handleDirectPay('phonepe')}
+                    className="flex items-center justify-center gap-2 bg-[#5f259f] hover:bg-[#4d1d82] active:scale-95 text-white font-bold py-3 px-3 rounded-xl text-xs sm:text-sm shadow transition-all cursor-pointer"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white text-[#5f259f] font-black flex items-center justify-center text-xs">पे</span>
+                    <span>PhonePe</span>
+                  </button>
+
+                  {/* Google Pay */}
+                  <button
+                    type="button"
+                    onClick={() => handleDirectPay('gpay')}
+                    className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-black active:scale-95 text-white font-bold py-3 px-3 rounded-xl text-xs sm:text-sm shadow transition-all cursor-pointer border border-slate-700"
+                  >
+                    <span className="font-extrabold text-blue-400">G</span>
+                    <span className="font-extrabold text-red-400">P</span>
+                    <span className="font-extrabold text-amber-400">a</span>
+                    <span className="font-extrabold text-emerald-400">y</span>
+                    <span>(Google Pay)</span>
+                  </button>
+
+                  {/* Paytm */}
+                  <button
+                    type="button"
+                    onClick={() => handleDirectPay('paytm')}
+                    className="flex items-center justify-center gap-2 bg-[#002970] hover:bg-[#001d52] active:scale-95 text-white font-bold py-3 px-3 rounded-xl text-xs sm:text-sm shadow transition-all cursor-pointer"
+                  >
+                    <span className="font-black text-[#00baf2] text-xs">paytm</span>
+                    <span>Paytm</span>
+                  </button>
+
+                  {/* Other UPI Apps */}
+                  <button
+                    type="button"
+                    onClick={() => handleDirectPay('upi')}
+                    className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-3 px-3 rounded-xl text-xs sm:text-sm shadow transition-all cursor-pointer"
+                  >
+                    <Smartphone size={15} />
+                    <span>{language === 'hi' ? 'अन्य UPI ऐप्स' : 'Other UPI'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Helpful Security Notice explaining the exact decline reason */}
+              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
+                <div className="font-bold flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                  <AlertTriangle size={15} />
+                  <span>{language === 'hi' ? 'पेमेंट डिक्लाइन (Decline) का समाधान:' : 'Payment Decline Solution:'}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+                  {language === 'hi'
+                    ? 'यदि Google Pay में "Declined for security reasons" आ रहा है, तो ऐसा दो वजहों से होता है: (1) अगर आप उसी मोबाइल या बैंक खाते से खुद को ट्रांसफर कर रहे हैं जिस पर UPI ID बनी है, या (2) ब्राउज़र से डायरेक्ट लिंक को बैंक सुरक्षा रोक देती है। समाधान: ऊपर दिया गया "UPI ID कॉपी करें" बटन दबाएं और Google Pay / PhonePe ऐप में जाकर सीधे "Pay UPI ID" में पेस्ट करके भेजें।'
+                    : 'If Google Pay declines with "Security reasons", it happens either when paying to your own account, or bank blocking browser links. Solution: Click "Copy ID" above, open Google Pay/PhonePe and paste directly in "Pay to UPI ID".'}
+                </p>
+              </div>
+
+              {/* Navigation Action Buttons */}
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setStep('amount')}
-                  className="px-6 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                  className="px-5 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors text-sm"
                 >
                   {language === 'hi' ? 'वापस' : 'Back'}
                 </button>
                 <button
                   onClick={() => setStep('form')}
-                  className="flex-1 bg-red-700 hover:bg-red-800 text-white font-bold text-lg py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="flex-1 bg-red-700 hover:bg-red-800 active:bg-red-900 text-white font-bold text-sm sm:text-base py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {language === 'hi' ? 'पेमेंट कर दिया? रसीद के लिए डिटेल भरें' : 'Paid? Fill Details for Receipt'}
+                  <span>{language === 'hi' ? 'भुगतान कर दिया? रसीद बनाएं (UTR दर्ज करें)' : 'Paid? Generate Receipt (Enter UTR)'}</span>
                 </button>
               </div>
             </div>

@@ -10,7 +10,6 @@ import {
   Zap, 
   ShieldCheck, 
   ExternalLink,
-  ChevronRight,
   ArrowRight
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
