@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-type Language = 'hi' | 'en';
+export type Language = 'hi' | 'en' | 'ur';
 
 interface LanguageContextType {
   language: Language;
@@ -17,17 +17,44 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const saved = localStorage.getItem('liveup18_lang') as Language;
-    if (saved && (saved === 'hi' || saved === 'en')) {
+    if (saved && (saved === 'hi' || saved === 'en' || saved === 'ur')) {
       setLanguageState(saved);
+      if (saved === 'ur') {
+        document.documentElement.dir = 'rtl';
+      } else {
+        document.documentElement.dir = 'ltr';
+      }
     } else {
       setLanguageState('hi');
       localStorage.setItem('liveup18_lang', 'hi');
+      document.documentElement.dir = 'ltr';
     }
   }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('liveup18_lang', lang);
+    
+    if (lang === 'ur') {
+      document.documentElement.dir = 'rtl';
+    } else {
+      document.documentElement.dir = 'ltr';
+    }
+
+    const domain = window.location.hostname;
+    // Set cookie for Google Translate
+    if (lang === 'hi') {
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + domain;
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=." + domain;
+    } else {
+      document.cookie = `googtrans=/hi/${lang}; path=/;`;
+      document.cookie = `googtrans=/hi/${lang}; path=/; domain=${domain}`;
+      document.cookie = `googtrans=/hi/${lang}; path=/; domain=.${domain}`;
+    }
+    
+    // Reload page to let Google Translate script pick up the new cookie instantly
+    window.location.reload();
   };
 
   return (
@@ -39,32 +66,22 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
 export const useLanguage = () => useContext(LanguageContext);
 
-// Helper functions for content
 export const getLocalizedText = (item: any, field: string, lang: Language): string => {
-  if (lang === 'en' && item[`${field}En`]) {
-    return item[`${field}En`];
-  }
+  // Google Translate will auto-translate the DOM. 
+  // We still provide specific fields if they were manually written by admin, otherwise default to base content.
+  if (lang === 'en' && item[`${field}En`]) return item[`${field}En`];
+  if (lang === 'ur' && item[`${field}Ur`]) return item[`${field}Ur`];
   
-  if (field === 'headline') {
-    return item['headlineHi'] || item['headline'] || item['title'] || '';
-  }
-  if (field === 'shortSummary') {
-    return item['shortSummaryHi'] || item['shortSummary'] || '';
-  }
-  if (field === 'content') {
-    return item['contentHi'] || item['content'] || '';
-  }
-
+  if (field === 'headline') return item['headlineHi'] || item['headline'] || item['title'] || '';
+  if (field === 'shortSummary') return item['shortSummaryHi'] || item['shortSummary'] || '';
+  if (field === 'content') return item['contentHi'] || item['content'] || '';
   return item[field] || '';
 };
 
 export const getLocalizedArray = (item: any, field: string, lang: Language): string[] => {
-  if (lang === 'en' && item[`${field}En`] && item[`${field}En`].length > 0) {
-    return item[`${field}En`];
-  }
+  if (lang === 'en' && item[`${field}En`] && item[`${field}En`].length > 0) return item[`${field}En`];
+  if (lang === 'ur' && item[`${field}Ur`] && item[`${field}Ur`].length > 0) return item[`${field}Ur`];
   
-  if (field === 'keyPoints') {
-    return item['keyPointsHi'] || item['keyPoints'] || [];
-  }
+  if (field === 'keyPoints') return item['keyPointsHi'] || item['keyPoints'] || [];
   return item[field] || [];
 };

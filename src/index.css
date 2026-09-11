@@ -89,3 +89,12 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400..700&display=swap');
+
+html[dir="rtl"] {
+  font-family: 'Noto Nastaliq Urdu', serif;
+}
+html[dir="rtl"] input, html[dir="rtl"] button {
+  font-family: 'Noto Nastaliq Urdu', serif;
+}

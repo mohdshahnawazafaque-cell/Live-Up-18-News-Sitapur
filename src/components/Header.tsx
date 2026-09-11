@@ -11,23 +11,23 @@ import InstallPWA from "./InstallPWA";
 import PushNotificationManager from "./PushNotificationManager";
 
 const NAV_ITEMS = [
-  { en: "HOME", hi: "होम", path: "/" },
-  { en: "INDIA", hi: "भारत", path: "/category/india" },
-  { en: "UTTAR PRADESH", hi: "उत्तर प्रदेश", path: "/category/uttar-pradesh" },
-  { en: "UP DISTRICTS", hi: "यूपी के ज़िले", path: "/districts" },
-  { en: "POLITICS", hi: "राजनीति", path: "/category/politics" },
-  { en: "CRIME", hi: "क्राइम", path: "/category/crime" },
-  { en: "WEATHER", hi: "मौसम", path: "/category/weather" },
-  { en: "BUSINESS", hi: "बिज़नेस", path: "/category/business" },
-  { en: "SPORTS", hi: "खेल", path: "/category/sports" },
-  { en: "ENTERTAINMENT", hi: "मनोरंजन", path: "/category/entertainment" },
-  { en: "TECHNOLOGY", hi: "टेक", path: "/category/technology" },
-  { en: "EDUCATION", hi: "शिक्षा", path: "/category/education" },
-  { en: "HEALTH", hi: "स्वास्थ्य", path: "/category/health" },
-  { en: "WORLD", hi: "दुनिया", path: "/category/world" },
-  { en: "VIDEO NEWS", hi: "वीडियो", path: "/category/video-news" },
-  { en: "PHOTO GALLERY", hi: "फ़ोटो", path: "/category/photo-gallery" },
-  { en: "TEAM", hi: "हमारी टीम", path: "/team" }
+  { en: "HOME", hi: "होम", ur: "ہوم", path: "/" },
+  { en: "INDIA", hi: "भारत", ur: "بھارت", path: "/category/india" },
+  { en: "UTTAR PRADESH", hi: "उत्तर प्रदेश", ur: "اتر پردیش", path: "/category/uttar-pradesh" },
+  { en: "UP DISTRICTS", hi: "यूपी के ज़िले", ur: "یوپی کے اضلاع", path: "/districts" },
+  { en: "POLITICS", hi: "राजनीति", ur: "سیاست", path: "/category/politics" },
+  { en: "CRIME", hi: "क्राइम", ur: "جرائم", path: "/category/crime" },
+  { en: "WEATHER", hi: "मौसम", ur: "موسم", path: "/category/weather" },
+  { en: "BUSINESS", hi: "बिज़नेस", ur: "کاروبار", path: "/category/business" },
+  { en: "SPORTS", hi: "खेल", ur: "کھیل", path: "/category/sports" },
+  { en: "ENTERTAINMENT", hi: "मनोरंजन", ur: "تفریح", path: "/category/entertainment" },
+  { en: "TECHNOLOGY", hi: "टेक", ur: "ٹیکنالوجی", path: "/category/technology" },
+  { en: "EDUCATION", hi: "शिक्षा", ur: "تعلیم", path: "/category/education" },
+  { en: "HEALTH", hi: "स्वास्थ्य", ur: "صحت", path: "/category/health" },
+  { en: "WORLD", hi: "दुनिया", ur: "دنیا", path: "/category/world" },
+  { en: "VIDEO NEWS", hi: "वीडियो", ur: "ویڈیو", path: "/category/video-news" },
+  { en: "PHOTO GALLERY", hi: "फ़ोटो", ur: "تصاویر", path: "/category/photo-gallery" },
+  { en: "TEAM", hi: "हमारी टीम", ur: "ہماری ٹیم", path: "/team" }
 ];
 
 export default function Header() {
@@ -61,6 +61,7 @@ export default function Header() {
             <div className="flex gap-3">
               <button onClick={() => setLanguage('en')} className={`transition-colors ${language === 'en' ? 'text-red-700 dark:text-red-500 font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}>English</button>
               <button onClick={() => setLanguage('hi')} className={`transition-colors ${language === 'hi' ? 'text-red-700 dark:text-red-500 font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}>हिंदी</button>
+              <button onClick={() => setLanguage('ur')} className={`transition-colors ${language === 'ur' ? 'text-red-700 dark:text-red-500 font-bold' : 'hover:text-slate-900 dark:hover:text-white'}`}>اردو</button>
             </div>
             <button onClick={toggleTheme} className="hover:text-slate-900 dark:hover:text-white transition-colors" title="Toggle Dark Mode">
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
@@ -126,7 +127,7 @@ export default function Header() {
                   to={item.path}
                   className="block px-2 py-3 text-[11px] xl:text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-700 dark:hover:text-red-500 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors uppercase tracking-wider"
                 >
-                  {language === 'hi' ? item.hi : item.en}
+                  {language === 'ur' ? item.ur : (language === 'hi' ? item.hi : item.en)}
                 </Link>
               </li>
             ))}
@@ -145,6 +146,7 @@ export default function Header() {
             <div className="flex bg-white dark:bg-black rounded-lg p-1 justify-between col-span-2 shadow-sm border border-slate-200 dark:border-slate-800">
               <button onClick={() => { setLanguage('en'); setIsMobileMenuOpen(false); }} className={`flex-1 text-center py-2 text-xs font-bold rounded ${language === 'en' ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-600 dark:text-slate-400'}`}>English</button>
               <button onClick={() => { setLanguage('hi'); setIsMobileMenuOpen(false); }} className={`flex-1 text-center py-2 text-xs font-bold rounded ${language === 'hi' ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-600 dark:text-slate-400'}`}>हिंदी</button>
+              <button onClick={() => { setLanguage('ur'); setIsMobileMenuOpen(false); }} className={`flex-1 text-center py-2 text-xs font-bold rounded ${language === 'ur' ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-600 dark:text-slate-400'}`}>اردو</button>
             </div>
             
             <div className="col-span-2 flex gap-3">
@@ -168,7 +170,7 @@ export default function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block px-6 py-3.5 text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-red-700 dark:hover:text-red-500 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors uppercase tracking-widest border-b border-slate-100 dark:border-slate-800/50"
                 >
-                  {language === 'hi' ? item.hi : item.en}
+                  {language === 'ur' ? item.ur : (language === 'hi' ? item.hi : item.en)}
                 </Link>
               </li>
             ))}

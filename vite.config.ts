@@ -24,13 +24,19 @@ export default defineConfig(() => {
         scope: '/',
         icons: [
           {
-            src: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=192&h=192&fit=crop&q=80',
+            src: '/icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=192&h=192&fit=crop&q=80',
             sizes: '192x192',
             type: 'image/jpeg',
             purpose: 'any'
           },
           {
-            src: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=512&h=512&fit=crop&q=80',
+            src: 'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=512&h=512&fit=crop&q=80',
             sizes: '512x512',
             type: 'image/jpeg',
             purpose: 'any'
