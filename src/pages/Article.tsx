@@ -312,9 +312,19 @@ ${url}`;
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
         <div className="relative aspect-video rounded-xl overflow-hidden shadow-sm bg-slate-100 dark:bg-slate-900">
           <img 
-            src={article.featuredImage || "https://picsum.photos/seed/news/1200/800"} 
+            src={article.featuredImage || "/police_action.jpg"} 
             alt={getLocalizedText(article, 'headline', language)} 
             className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.dataset.triedFallback) {
+                target.dataset.triedFallback = "true";
+                target.src = "/police_action.jpg";
+              } else if (!target.dataset.triedLogo) {
+                target.dataset.triedLogo = "true";
+                target.src = "/logo.png";
+              }
+            }}
           />
         </div>
       </div>

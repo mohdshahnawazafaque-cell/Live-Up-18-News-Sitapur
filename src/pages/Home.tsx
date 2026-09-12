@@ -160,11 +160,21 @@ export default function Home() {
             <div className="lg:col-span-8">
               {featuredNews ? (
                 <Link to={`/article/${featuredNews.id}`} className="group flex flex-col gap-6">
-                  <div className="relative overflow-hidden rounded-lg aspect-video shadow-sm">
+                  <div className="relative overflow-hidden rounded-lg aspect-video shadow-sm bg-slate-100 dark:bg-slate-900">
                     <img loading="lazy" 
-                      src={featuredNews.featuredImage || "https://picsum.photos/seed/news/800/600"} 
+                      src={featuredNews.featuredImage || "/police_action.jpg"} 
                       alt={getLocalizedText(featuredNews, 'headline', language)}
                       className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.dataset.triedFallback) {
+                          target.dataset.triedFallback = "true";
+                          target.src = "/police_action.jpg";
+                        } else if (!target.dataset.triedLogo) {
+                          target.dataset.triedLogo = "true";
+                          target.src = "/logo.png";
+                        }
+                      }}
                     />
                   </div>
                   <div className="flex flex-col">
@@ -212,11 +222,21 @@ export default function Home() {
                           {getLocalizedText(article, 'headline', language)}
                         </h4>
                       </div>
-                      <div className="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded">
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded bg-slate-100 dark:bg-slate-900">
                         <img 
-                          src={article.featuredImage || "https://picsum.photos/seed/news/800/600"} 
+                          src={article.featuredImage || "/police_action.jpg"} 
                           alt={getLocalizedText(article, 'headline', language)}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.dataset.triedFallback) {
+                              target.dataset.triedFallback = "true";
+                              target.src = "/police_action.jpg";
+                            } else if (!target.dataset.triedLogo) {
+                              target.dataset.triedLogo = "true";
+                              target.src = "/logo.png";
+                            }
+                          }}
                         />
                       </div>
                     </Link>
@@ -246,11 +266,21 @@ export default function Home() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {(latestNews || []).slice(0, visibleNewsCount).filter(Boolean).map((article) => (
                       <Link key={article.id} to={`/article/${article.id}`} className="group flex flex-col bg-white dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="relative aspect-[16/10] overflow-hidden">
+                        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-900">
                           <img 
-                            src={article.featuredImage || "https://picsum.photos/seed/news/800/600"} 
+                            src={article.featuredImage || "/police_action.jpg"} 
                             alt={getLocalizedText(article, 'headline', language)}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.dataset.triedFallback) {
+                                target.dataset.triedFallback = "true";
+                                target.src = "/police_action.jpg";
+                              } else if (!target.dataset.triedLogo) {
+                                target.dataset.triedLogo = "true";
+                                target.src = "/logo.png";
+                              }
+                            }}
                           />
                         </div>
                         <div className="p-4 flex-1 flex flex-col justify-between">
@@ -308,9 +338,19 @@ export default function Home() {
                           {(catArticles || []).filter(Boolean).map((art) => (
                             <Link key={art.id} to={`/article/${art.id}`} className="group flex gap-3 items-center bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
                               <img 
-                                src={art.featuredImage || "https://picsum.photos/seed/news/800/600"} 
+                                src={art.featuredImage || "/police_action.jpg"} 
                                 alt={getLocalizedText(art, 'headline', language)}
-                                className="w-20 h-20 object-cover rounded flex-shrink-0"
+                                className="w-20 h-20 object-cover rounded flex-shrink-0 bg-slate-100 dark:bg-slate-900"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (!target.dataset.triedFallback) {
+                                    target.dataset.triedFallback = "true";
+                                    target.src = "/police_action.jpg";
+                                  } else if (!target.dataset.triedLogo) {
+                                    target.dataset.triedLogo = "true";
+                                    target.src = "/logo.png";
+                                  }
+                                }}
                               />
                               <div className="flex-1 min-w-0">
                                 <h5 className="font-heading font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors line-clamp-2">
