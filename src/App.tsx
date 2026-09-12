@@ -21,14 +21,17 @@ import { ThemeProvider } from "./context/ThemeContext";
 export default function App() {
 
   useEffect(() => {
-    // Suppress console errors about quota
+    // Suppress console errors about quota or share cancel
     const originalConsoleError = console.error;
     console.error = (...args) => {
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('Quota limit exceeded')) {
-        return; // Ignore quota errors
-      }
-      if (args[0] && args[0].message && args[0].message.includes('Quota limit exceeded')) {
-        return; // Ignore quota errors
+      const msg = typeof args[0] === 'string' ? args[0] : (args[0]?.message || '');
+      if (
+        msg.includes('Quota limit exceeded') ||
+        msg.includes('RESOURCE_EXHAUSTED') ||
+        msg.includes('Error fetching live TV config') ||
+        msg.includes('Share canceled')
+      ) {
+        return; // Ignore expected quota or share cancellation notices
       }
       originalConsoleError.apply(console, args);
     };

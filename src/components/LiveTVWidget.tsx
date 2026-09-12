@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getDoc, doc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { getCachedDoc } from '../lib/cache';
 import { db } from '../lib/firebase';
 import { getEmbedUrl } from '../lib/youtube';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,17 +11,21 @@ export default function LiveTVWidget() {
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchLiveTV = async () => {
       try {
-        const configDoc = await getDoc(doc(db, 'siteConfig', 'global'));
-        if (configDoc.exists() && configDoc.data().liveTvUrl) {
-          setLiveUrl(configDoc.data().liveTvUrl);
+        const configDoc = await getCachedDoc(doc(db, 'siteConfig', 'global'), 'siteConfig-global');
+        if (isMounted && configDoc && configDoc.liveTvUrl) {
+          setLiveUrl(configDoc.liveTvUrl);
         }
-      } catch (error) {
-        console.error("Error fetching live TV config:", error);
+      } catch {
+        // Silently catch quota or network issues so no error toast is triggered
       }
     };
     fetchLiveTV();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (!liveUrl) return null;

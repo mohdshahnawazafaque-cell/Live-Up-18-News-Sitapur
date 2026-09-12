@@ -12,16 +12,37 @@ import DonationBanner from "../components/DonationBanner";
 import { collection, query, orderBy, limit } from "firebase/firestore";
 import { getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
+import { FALLBACK_ARTICLES } from "../data/fallbackNews";
 
 export default function Home() {
   const { language } = useLanguage();
-  const [featuredNews, setFeaturedNews] = useState<NewsArticle | null>(null);
-  const [topHeadlines, setTopHeadlines] = useState<NewsArticle[]>([]);
-  const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
-  const [videos, setVideos] = useState<any[]>([]);
+  const initialArticles = FALLBACK_ARTICLES.filter(a => a.status !== 'draft');
+  const [featuredNews, setFeaturedNews] = useState<NewsArticle | null>(() => initialArticles[0] || null);
+  const [topHeadlines, setTopHeadlines] = useState<NewsArticle[]>(() => initialArticles.slice(1, 5));
+  const [latestNews, setLatestNews] = useState<NewsArticle[]>(() => initialArticles.slice(5));
+  const [videos, setVideos] = useState<any[]>(() => {
+    return initialArticles.filter(a => a.videoUrl).map(a => ({
+      id: a.id,
+      title: a.headline,
+      titleEn: a.headlineEn || a.headline,
+      url: a.videoUrl,
+      date: a.publicationDate
+    }));
+  });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [categories, setCategories] = useState<{ [key: string]: NewsArticle[] }>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [categories, setCategories] = useState<{ [key: string]: NewsArticle[] }>(() => {
+    const cats: { [key: string]: NewsArticle[] } = {};
+    initialArticles.forEach((article: any) => {
+      if (article.category) {
+        if (!cats[article.category]) cats[article.category] = [];
+        if (cats[article.category].length < 4) {
+          cats[article.category].push(article);
+        }
+      }
+    });
+    return cats;
+  });
   const [visibleNewsCount, setVisibleNewsCount] = useState(12);
 
   const formatDate = (dateInput: any) => {
@@ -51,7 +72,11 @@ export default function Home() {
         if (!isMounted) return;
 
         // Filter out drafts for public view
-        const publishedArticles = (articles || []).filter((a: any) => a.status !== 'draft');
+        let publishedArticles = (articles || []).filter((a: any) => a.status !== 'draft');
+        if (publishedArticles.length === 0) {
+          publishedArticles = FALLBACK_ARTICLES;
+        }
+
         const videoArticles = publishedArticles.filter((a: any) => a.videoUrl);
         setVideos(videoArticles.map((a: any) => ({
           id: a.id,
@@ -61,22 +86,20 @@ export default function Home() {
           date: a.publicationDate
         })));
 
-        if (publishedArticles.length > 0) {
-          setFeaturedNews(publishedArticles[0]);
-          setTopHeadlines(publishedArticles.slice(1, 5));
-          setLatestNews(publishedArticles.slice(5));
-          
-          const cats: { [key: string]: NewsArticle[] } = {};
-          publishedArticles.forEach((article: any) => {
-            if (article.category) {
-              if (!cats[article.category]) cats[article.category] = [];
-              if (cats[article.category].length < 4) {
-                cats[article.category].push(article);
-              }
+        setFeaturedNews(publishedArticles[0]);
+        setTopHeadlines(publishedArticles.slice(1, 5));
+        setLatestNews(publishedArticles.slice(5));
+        
+        const cats: { [key: string]: NewsArticle[] } = {};
+        publishedArticles.forEach((article: any) => {
+          if (article.category) {
+            if (!cats[article.category]) cats[article.category] = [];
+            if (cats[article.category].length < 4) {
+              cats[article.category].push(article);
             }
-          });
-          setCategories(cats);
-        }
+          }
+        });
+        setCategories(cats);
       } catch (err: any) {
         console.error("Error fetching news:", err);
         if (isMounted) {

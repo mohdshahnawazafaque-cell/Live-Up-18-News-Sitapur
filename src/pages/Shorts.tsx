@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { getCachedDocs } from '../lib/cache';
 import { db } from '../lib/firebase';
 import { NewsArticle } from '../types';
 import { useLanguage, getLocalizedText } from '../context/LanguageContext';
@@ -15,15 +16,9 @@ export default function Shorts() {
     const fetchShorts = async () => {
       try {
         const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(20));
-        const snap = await getDocs(q);
-        const articles: NewsArticle[] = [];
-        snap.forEach(doc => {
-          const data = doc.data() as NewsArticle;
-          if (data.status !== 'draft' && data.featuredImage) {
-            articles.push({ id: doc.id, ...data });
-          }
-        });
-        setShorts(articles);
+        const articles = await getCachedDocs(q, 'shorts-news');
+        const filtered = (articles || []).filter((a: any) => a.status !== 'draft' && a.featuredImage);
+        setShorts(filtered as NewsArticle[]);
       } catch (e) {
         console.error(e);
       } finally {
@@ -38,8 +33,8 @@ export default function Shorts() {
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Live UP 18 News', url });
-      } catch (e) {
-        console.error(e);
+      } catch (e: any) {
+        // Ignored or user dismissed share dialog
       }
     } else {
       navigator.clipboard.writeText(url);

@@ -16,6 +16,7 @@ import TrendingWidget from "../components/TrendingWidget";
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { getCachedDoc, getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
+import { FALLBACK_ARTICLES } from "../data/fallbackNews";
 import YouTubeGallery from "../components/YouTubeGallery";
 import TVNewsFrame from "../components/TVNewsFrame";
 import SEO from "../components/SEO";
@@ -52,10 +53,16 @@ export default function Article() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { isBookmarked, toggleBookmark } = useBookmarks();
-  const [article, setArticle] = useState<NewsArticle | null>(null);
+  const [article, setArticle] = useState<NewsArticle | null>(() => {
+    if (!id) return null;
+    return FALLBACK_ARTICLES.find(a => a.id === id) || null;
+  });
   const [reporter, setReporter] = useState<TeamMember | null>(null);
   const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (!id) return true;
+    return !FALLBACK_ARTICLES.some(a => a.id === id);
+  });
   const [reactions, setReactions] = useState({ like: 0, fire: 0, comment: 0 });
   const [hasReacted, setHasReacted] = useState(false);
   const [related, setRelated] = useState<NewsArticle[]>([]);
@@ -72,30 +79,45 @@ export default function Article() {
       try {
         if (!id) return;
         const docRef = doc(db, "news", id);
-        const docSnap = await getDoc(docRef);
+        let data = await getCachedDoc(docRef, 'article-' + id) as NewsArticle | null;
+
+        if (!data) {
+          try {
+            const persisted = localStorage.getItem("liveup18_persisted_articles");
+            if (persisted) {
+              const list = JSON.parse(persisted);
+              data = list.find((a: any) => a.id === id) || null;
+            }
+          } catch {}
+        }
+
+        if (!data) {
+          data = FALLBACK_ARTICLES.find(a => a.id === id) || null;
+        }
         
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() } as NewsArticle;
+        if (data) {
           setArticle(data);
           
           // Increment views asynchronously
           if (data.id) {
             updateDoc(doc(db, "news", data.id), {
                 views: increment(1)
-            }).catch(e => console.error("Could not update views:", e));
+            }).catch(() => {});
           }
           setComments((data as any).comments || []);
           
           // Fetch related
-          const q = query(collection(db, "news"), where("category", "==", data.category), limit(5));
-          const relatedSnap = await getCachedDocs(q, 'related-' + data.category);
-          const relatedArticles: NewsArticle[] = [];
-          relatedSnap.forEach((rDoc: any) => {
-            if (rDoc.id !== id) {
-              relatedArticles.push(rDoc as NewsArticle);
-            }
-          });
-          setRelated(relatedArticles);
+          if (data.category) {
+            const q = query(collection(db, "news"), where("category", "==", data.category), limit(5));
+            const relatedSnap = await getCachedDocs(q, 'related-' + data.category);
+            const relatedArticles: NewsArticle[] = [];
+            (relatedSnap || []).forEach((rDoc: any) => {
+              if (rDoc.id !== id) {
+                relatedArticles.push(rDoc as NewsArticle);
+              }
+            });
+            setRelated(relatedArticles);
+          }
         } else {
           setArticle(null);
         }
@@ -209,7 +231,32 @@ ${url}`;
       />
       
       {/* Premium Article Header */}
-      <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+      <header className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
+        {/* Prominent Back Button */}
+        <div className="flex items-center justify-between w-full mb-6 border-b border-slate-100 dark:border-slate-800/60 pb-4">
+          <button
+            onClick={() => {
+              if (window.history.length > 2) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 rounded-full font-bold text-sm transition-all shadow-sm cursor-pointer group active:scale-95"
+            aria-label="Back"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span>{language === 'hi' ? '← मुख्य पृष्ठ / वापस जाएं' : '← Back to Home'}</span>
+          </button>
+          
+          <Link
+            to="/"
+            className="text-xs font-black text-red-600 hover:text-red-700 uppercase tracking-widest hidden sm:inline"
+          >
+            LIVE UP 18 NEWS
+          </Link>
+        </div>
+
         <div className="flex flex-col items-center text-center">
           <Link to={`/category/${article.category}`} className="text-red-700 dark:text-red-500 text-[11px] font-black uppercase tracking-[0.2em] mb-6 hover:underline">
             {article.category?.replace('-', ' ')}
@@ -250,7 +297,11 @@ ${url}`;
               >
                 <Bookmark size={18} fill={isBookmarked(article.id) ? 'currentColor' : 'none'} />
               </button>
-              <ShareButtons url={window.location.href} title={getLocalizedText(article, 'headline', language)} />
+              <ShareButtons 
+                url={window.location.href} 
+                title={getLocalizedText(article, 'headline', language)} 
+                imageUrl={article.featuredImage}
+              />
               <ReadAloudButton title={getLocalizedText(article, 'headline', language)} content={getLocalizedText(article, 'content', language)} />
             </div>
           </div>
@@ -296,6 +347,24 @@ ${url}`;
           <AdBanner position="article_sidebar" />
           <TrendingWidget />
         </aside>
+      </div>
+
+      {/* Floating Mobile Quick-Back Button */}
+      <div className="fixed bottom-6 left-5 z-40 md:hidden">
+        <button
+          onClick={() => {
+            if (window.history.length > 2) {
+              navigate(-1);
+            } else {
+              navigate('/');
+            }
+          }}
+          className="bg-slate-900/90 hover:bg-red-600 text-white p-3.5 rounded-full shadow-2xl backdrop-blur flex items-center justify-center border border-slate-700/80 active:scale-90 transition-all cursor-pointer"
+          title={language === 'hi' ? 'वापस जाएं' : 'Go Back'}
+          aria-label="Back"
+        >
+          <ArrowLeft size={20} />
+        </button>
       </div>
     </div>
   );

@@ -27,9 +27,20 @@ async function startServer() {
   });
 
   // Dynamic binary article image proxy for WhatsApp / social preview scrapers
+  const imageCache = new Map<string, { buffer: Buffer; mime: string }>();
+
   app.get("/api/article-image/:id", async (req, res) => {
     try {
       const articleId = req.params.id;
+
+      if (imageCache.has(articleId)) {
+        const cached = imageCache.get(articleId)!;
+        res.setHeader("Content-Type", cached.mime);
+        res.setHeader("Content-Length", cached.buffer.length);
+        res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=604800");
+        return res.send(cached.buffer);
+      }
+
       const firestoreUrl = `https://firestore.googleapis.com/v1/projects/gen-lang-client-0319583234/databases/ai-studio-liveup18news-6a9c02cc-41a6-4f64-ab51-964a11eec3b9/documents/news/${articleId}`;
       const dbRes = await fetch(firestoreUrl);
       if (!dbRes.ok) {
@@ -44,6 +55,7 @@ async function startServer() {
       if (match) {
         const mimeType = match[1] || 'image/jpeg';
         const buffer = Buffer.from(match[2], 'base64');
+        imageCache.set(articleId, { buffer, mime: mimeType });
         res.setHeader("Content-Type", mimeType);
         res.setHeader("Content-Length", buffer.length);
         res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=604800");

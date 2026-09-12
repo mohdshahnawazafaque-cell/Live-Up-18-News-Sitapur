@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { NewsArticle } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { hi } from "date-fns/locale";
@@ -8,9 +8,11 @@ import AdBanner from "../components/AdBanner";
 import { collection, query, limit } from "firebase/firestore";
 import { getCachedDocs } from "../lib/cache";
 import { db } from "../lib/firebase";
+import { ArrowLeft } from "lucide-react";
 
 export default function Category() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,24 @@ export default function Category() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 min-h-[70vh]">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[70vh]">
+      {/* Back Button */}
+      <div className="mb-6">
+        <button
+          onClick={() => {
+            if (window.history.length > 2) {
+              navigate(-1);
+            } else {
+              navigate('/');
+            }
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 rounded-full font-bold text-sm transition-all shadow-sm cursor-pointer group active:scale-95"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          <span>{language === 'hi' ? '← मुख्य पृष्ठ / वापस जाएं' : '← Back to Home'}</span>
+        </button>
+      </div>
+
       <div className="flex flex-col items-center justify-center border-b-2 border-slate-900 dark:border-white pb-8 mb-12">
         <span className="text-red-700 dark:text-red-500 text-sm font-black uppercase tracking-[0.3em] mb-4">
           Category
