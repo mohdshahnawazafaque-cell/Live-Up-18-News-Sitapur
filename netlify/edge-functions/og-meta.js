@@ -23,7 +23,18 @@ export default async (request, context) => {
         
         const headline = data.fields?.headline?.stringValue || 'LIVE UP 18 NEWS';
         let content = data.fields?.content?.stringValue || 'A modern, professional, responsive Indian digital news portal.';
-        const image = data.fields?.featuredImage?.stringValue || 'https://liveup18news.netlify.app/logo.png';
+        const rawImage = data.fields?.featuredImage?.stringValue;
+        const origin = url.origin.startsWith('http') ? url.origin : 'https://liveup18news.netlify.app';
+        let publicImage = `${origin}/logo.png`;
+
+        if (rawImage) {
+          if (rawImage.startsWith('data:')) {
+            // WhatsApp / Facebook / Twitter cannot load data: URLs; serve through dedicated endpoint
+            publicImage = `${origin}/api/article-image/${articleId}`;
+          } else if (rawImage.startsWith('http')) {
+            publicImage = rawImage;
+          }
+        }
 
         // Truncate content for description
         if (content.length > 150) content = content.substring(0, 150) + '...';
@@ -34,11 +45,13 @@ export default async (request, context) => {
 
         let html = await response.text();
         
-        // Remove existing OG tags to avoid duplicates
+        // Remove existing OG and twitter tags to avoid duplicates
         html = html.replace(/<meta property="og:title".*?>/g, '');
         html = html.replace(/<meta property="og:description".*?>/g, '');
         html = html.replace(/<meta property="og:image".*?>/g, '');
+        html = html.replace(/<meta property="og:image:.*?>/g, '');
         html = html.replace(/<meta property="og:type".*?>/g, '');
+        html = html.replace(/<meta property="og:url".*?>/g, '');
         html = html.replace(/<meta name="twitter:.*?>/g, '');
 
         // Inject new comprehensive tags right before </head>
@@ -46,20 +59,22 @@ export default async (request, context) => {
     <title>${safeHeadline}</title>
     <meta property="og:title" content="${safeHeadline}" />
     <meta property="og:description" content="${safeContent}" />
-    <meta property="og:image" content="${image}" />
-    <meta property="og:image:secure_url" content="${image}" />
-    <meta property="og:image:width" content="800" />
-    <meta property="og:image:height" content="450" />
+    <meta property="og:image" content="${publicImage}" />
+    <meta property="og:image:secure_url" content="${publicImage}" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="${safeHeadline}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${request.url}" />
     <meta property="og:site_name" content="LIVE UP 18 NEWS" />
     <meta itemprop="name" content="${safeHeadline}" />
     <meta itemprop="description" content="${safeContent}" />
-    <meta itemprop="image" content="${image}" />
+    <meta itemprop="image" content="${publicImage}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${safeHeadline}" />
     <meta name="twitter:description" content="${safeContent}" />
-    <meta name="twitter:image" content="${image}" />
+    <meta name="twitter:image" content="${publicImage}" />
 </head>`;
         
         html = html.replace(/<title>.*?<\/title>/, ''); // remove old title

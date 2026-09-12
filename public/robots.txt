@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://liveup18news.netlify.app/sitemap.xml
+Sitemap: https://liveup18news.com/sitemap.xml
