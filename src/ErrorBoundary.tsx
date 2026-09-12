@@ -32,12 +32,35 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px', background: '#ffebee', color: '#c62828', fontFamily: 'sans-serif', height: '100vh', overflow: 'auto' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>कुछ गड़बड़ हुई (Something went wrong)</h1>
-          <h2 style={{ fontSize: '18px', marginTop: '10px' }}>{this.state.error && this.state.error.toString()}</h2>
-          <details style={{ whiteSpace: 'pre-wrap', marginTop: '20px', background: '#fff', padding: '10px', borderRadius: '4px' }}>
-            {this.state.errorInfo && this.state.errorInfo.componentStack}
-          </details>
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans text-center">
+          <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-200">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
+              !
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 mb-2">
+              पेज लोड होने में समस्या हुई
+            </h1>
+            <p className="text-slate-600 text-sm mb-6">
+              कृपया पेज को रिफ्रेश करें या मुख्य पृष्ठ पर वापस जाएँ।
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null, errorInfo: null });
+                  window.location.reload();
+                }}
+                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors shadow-sm text-sm"
+              >
+                पेज रिफ्रेश करें (Refresh)
+              </button>
+              <a
+                href="/"
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors text-sm"
+              >
+                होम पर जाएँ (Home)
+              </a>
+            </div>
+          </div>
         </div>
       );
     }

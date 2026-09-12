@@ -19,20 +19,22 @@ export default function TrendingWidget() {
         const q = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(20));
         const articles = await getCachedDocs(q, 'trending-news');
         
-        // Sort locally by views (descending)
-        articles.sort((a, b) => (b.views || 0) - (a.views || 0));
-        
-        // Pseudo-randomize top 5 for demo, or just use the first 5.
-        // Let's just pick top 5 to represent trending.
-        setTrending(articles.slice(0, 5));
+        if (Array.isArray(articles)) {
+          // Sort locally by views (descending)
+          const sorted = [...articles].sort((a, b) => (b.views || 0) - (a.views || 0));
+          setTrending(sorted.slice(0, 5));
+        } else {
+          setTrending([]);
+        }
       } catch (err) {
         console.error(err);
+        setTrending([]);
       }
     };
     fetchTrending();
   }, []);
 
-  if (trending.length === 0) return null;
+  if (!Array.isArray(trending) || trending.length === 0) return null;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -43,7 +45,7 @@ export default function TrendingWidget() {
         </h3>
       </div>
       <div className="divide-y divide-slate-100 flex-1 flex flex-col p-4">
-        {trending.map((news, idx) => (
+        {(Array.isArray(trending) ? trending : []).map((news, idx) => (
           <Link key={news.id} to={`/article/${news.id}`} className="py-3 group flex items-start gap-4">
             <span className="text-4xl font-black text-slate-200 group-hover:text-red-200 transition-colors">
               {idx + 1}

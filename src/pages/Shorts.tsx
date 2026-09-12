@@ -50,7 +50,7 @@ export default function Shorts() {
         <ArrowLeft size={24} />
       </Link>
       
-      {shorts.map((article, index) => (
+      {(Array.isArray(shorts) ? shorts : []).map((article, index) => (
         <div key={article.id} className="h-screen w-full snap-start relative flex items-center justify-center bg-black">
           <img 
             src={article.featuredImage || "https://picsum.photos/seed/news/800/1200"} 

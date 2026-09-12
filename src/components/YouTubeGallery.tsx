@@ -23,7 +23,7 @@ export default function YouTubeGallery() {
       try {
         const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.youtube.com%2Ffeeds%2Fvideos.xml%3Fchannel_id%3D${CHANNEL_ID}`);
         const data = await res.json();
-        if (data.status === 'ok') {
+        if (data && data.status === 'ok' && Array.isArray(data.items)) {
           setVideos(data.items);
         }
       } catch (err) {
@@ -43,7 +43,7 @@ export default function YouTubeGallery() {
     );
   }
 
-  if (videos.length === 0) return null;
+  if (!Array.isArray(videos) || videos.length === 0) return null;
 
   return (
     <section className="bg-slate-900 dark:bg-black rounded-xl p-4 sm:p-6 text-white my-8 border border-slate-800 shadow-xl">
@@ -87,8 +87,8 @@ export default function YouTubeGallery() {
       {/* Grid of latest videos fetched from RSS */}
       <h4 className="text-xl font-bold mb-4 uppercase">{language === 'hi' ? 'लेटेस्ट वीडियोस' : 'Latest Videos'}</h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {videos.map((vid, idx) => {
-          const videoId = vid.guid.split(':')[2];
+        {(Array.isArray(videos) ? videos : []).map((vid, idx) => {
+          const videoId = (vid?.guid || '').split(':')[2] || vid?.link?.split('v=')[1] || '';
           return (
             <div key={idx} className="flex flex-col bg-slate-800 rounded-lg overflow-hidden border border-slate-700 group hover:border-red-500 transition-colors">
               <button onClick={() => { setCurrentVideoId(videoId); topRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); }} className="relative aspect-video block w-full overflow-hidden text-left focus:outline-none">

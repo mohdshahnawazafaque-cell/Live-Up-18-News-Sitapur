@@ -21,6 +21,23 @@ import { ThemeProvider } from "./context/ThemeContext";
 export default function App() {
 
   useEffect(() => {
+    // Purge any stale dummy BBC news from previous sessions
+    try {
+      const purgeKey = 'liveup18_purge_v3';
+      if (!localStorage.getItem(purgeKey)) {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('news') || key.includes('article') || key.includes('Poll') || key.includes('liveup18'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        sessionStorage.clear();
+        localStorage.setItem(purgeKey, 'true');
+      }
+    } catch {}
+
     // Suppress console errors about quota or share cancel
     const originalConsoleError = console.error;
     console.error = (...args) => {

@@ -19,7 +19,7 @@ export default function Bookmarks() {
         </h1>
       </div>
 
-      {savedArticles.length === 0 ? (
+      {!Array.isArray(savedArticles) || savedArticles.length === 0 ? (
         <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
           <Bookmark className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
           <h2 className="text-xl font-bold text-slate-500 dark:text-slate-400">
@@ -31,7 +31,7 @@ export default function Bookmarks() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {savedArticles.map(article => (
+          {(savedArticles || []).filter(Boolean).map(article => (
             <div key={article.id} className="bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden flex flex-col group border border-slate-100 dark:border-slate-800 hover:shadow-xl transition-all">
               <Link to={`/article/${article.id}`} className="relative h-48 overflow-hidden block">
                 <img 
@@ -52,10 +52,18 @@ export default function Bookmarks() {
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium">
                     <Clock size={14} className="mr-1" />
-                    {formatDistanceToNow(article.publicationDate, { 
-                      addSuffix: true,
-                      locale: language === 'hi' ? hi : undefined
-                    })}
+                    {(() => {
+                      try {
+                        const d = article.publicationDate ? new Date(article.publicationDate) : null;
+                        if (!d || isNaN(d.getTime())) return '';
+                        return formatDistanceToNow(d, { 
+                          addSuffix: true,
+                          locale: language === 'hi' ? hi : undefined
+                        });
+                      } catch {
+                        return '';
+                      }
+                    })()}
                   </div>
                   <button 
                     onClick={() => toggleBookmark(article)}

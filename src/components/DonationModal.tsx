@@ -644,7 +644,16 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                       </div>
                       <div>
                         <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date & Time</span>
-                        <strong className="text-sm text-slate-900">{format(receiptData.date, 'dd MMM yyyy, hh:mm a')}</strong>
+                        <strong className="text-sm text-slate-900">
+                          {(() => {
+                            try {
+                              const d = receiptData.date ? new Date(receiptData.date) : null;
+                              return (d && !isNaN(d.getTime())) ? format(d, 'dd MMM yyyy, hh:mm a') : '';
+                            } catch {
+                              return '';
+                            }
+                          })()}
+                        </strong>
                       </div>
                       
                       <div>

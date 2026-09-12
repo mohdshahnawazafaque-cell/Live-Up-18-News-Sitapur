@@ -17,13 +17,14 @@ export default function BreakingNews() {
         const q = query(collection(db, "news"), where("isBreaking", "==", true), orderBy("publicationDate", "desc"), limit(5));
         let articles = await getCachedDocs(q, 'breaking-news');
         
-        if (articles.length === 0) {
+        if (articles && articles.length === 0) {
           const q2 = query(collection(db, "news"), orderBy("publicationDate", "desc"), limit(5));
           articles = await getCachedDocs(q2, 'latest-news-fallback');
         }
-        setBreakingNews(articles);
+        setBreakingNews(Array.isArray(articles) ? articles : []);
       } catch (err) {
         console.error(err);
+        setBreakingNews([]);
       } finally {
         setLoading(false);
       }
@@ -60,7 +61,7 @@ export default function BreakingNews() {
             </a>
           </span>
 
-          {breakingNews.map((news) => (
+          {(Array.isArray(breakingNews) ? breakingNews : []).map((news) => (
             <Link key={news.id} to={`/article/${news.id}`} className="font-semibold text-sm md:text-base hover:text-red-400 transition-colors flex items-center gap-2 mx-8">
               <span className="text-red-500 text-xl">•</span>
               {getLocalizedText(news, 'headline', language)}
@@ -99,7 +100,7 @@ export default function BreakingNews() {
             </a>
           </span>
 
-          {breakingNews.map((news) => (
+          {(Array.isArray(breakingNews) ? breakingNews : []).map((news) => (
             <Link key={news.id} to={`/article/${news.id}`} className="font-semibold text-sm md:text-base hover:text-red-400 transition-colors flex items-center gap-2 mx-8">
               <span className="text-red-500 text-xl">•</span>
               {getLocalizedText(news, 'headline', language)}

@@ -42,13 +42,13 @@ export default function Team() {
         </p>
       </header>
 
-      {team.length === 0 ? (
+      {!Array.isArray(team) || team.length === 0 ? (
         <div className="text-center py-12 text-slate-500">
           {language === 'hi' ? 'अभी तक कोई सदस्य नहीं जोड़ा गया है।' : 'No team members added yet.'}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {team.map(member => (
+          {(Array.isArray(team) ? team : []).map(member => (
             <div key={member.id} className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col hover:shadow-xl transition-shadow group">
               <div className="aspect-[4/5] w-full overflow-hidden relative bg-slate-100">
                 {member.photoUrl ? (

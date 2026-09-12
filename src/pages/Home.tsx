@@ -201,7 +201,7 @@ export default function Home() {
               </div>
               
               <div className="flex flex-col gap-6">
-                {(topHeadlines.length > 0 ? topHeadlines : latestNews.slice(0, 4)).map((article, index) => (
+                {((topHeadlines && topHeadlines.length > 0 ? topHeadlines : (latestNews || []).slice(0, 4)) || []).filter(Boolean).map((article, index) => (
                   <div key={article.id} className={`group flex flex-col gap-3 ${index !== 3 ? 'border-b border-slate-200 dark:border-slate-800 pb-6' : ''}`}>
                     <Link to={`/article/${article.id}`} className="flex gap-4">
                       <div className="flex-1 flex flex-col">
@@ -244,7 +244,7 @@ export default function Home() {
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {latestNews.slice(0, visibleNewsCount).map((article) => (
+                    {(latestNews || []).slice(0, visibleNewsCount).filter(Boolean).map((article) => (
                       <Link key={article.id} to={`/article/${article.id}`} className="group flex flex-col bg-white dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
                         <div className="relative aspect-[16/10] overflow-hidden">
                           <img 
@@ -273,7 +273,7 @@ export default function Home() {
                     ))}
                   </div>
 
-                  {latestNews.length > visibleNewsCount && (
+                  {(latestNews || []).length > visibleNewsCount && (
                     <div className="text-center mt-8">
                       <button 
                         onClick={() => setVisibleNewsCount(prev => prev + 12)}
@@ -286,9 +286,12 @@ export default function Home() {
                 </div>
 
                 {/* Category Highlights */}
-                {Object.keys(categories).length > 0 && (
+                {categories && Object.keys(categories).length > 0 && (
                   <div className="space-y-10 pt-4">
-                    {Object.entries(categories).slice(0, 3).map(([catName, catArticles]) => (
+                    {Object.entries(categories)
+                      .filter(([_, catArticles]) => Array.isArray(catArticles) && catArticles.length > 0)
+                      .slice(0, 3)
+                      .map(([catName, catArticles]) => (
                       <div key={catName} className="space-y-4">
                         <div className="flex items-center justify-between border-b-2 border-red-700 pb-2">
                           <h4 className="text-xl font-heading font-black text-slate-900 dark:text-white uppercase tracking-wider">
@@ -302,7 +305,7 @@ export default function Home() {
                           </Link>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {catArticles.map((art) => (
+                          {(catArticles || []).filter(Boolean).map((art) => (
                             <Link key={art.id} to={`/article/${art.id}`} className="group flex gap-3 items-center bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
                               <img 
                                 src={art.featuredImage || "https://picsum.photos/seed/news/800/600"} 

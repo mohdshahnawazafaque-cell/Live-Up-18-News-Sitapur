@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper, Edit, X, MonitorPlay, BarChart2, Heart, Download, Printer, CheckCircle } from "lucide-react";
+import { Trash2, RefreshCw, Plus, Globe, Settings, Newspaper, Edit, X, MonitorPlay, BarChart2, Heart, Download, Printer, CheckCircle, Tag, MapPin } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -13,9 +13,43 @@ import { db, storage, auth } from "../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { signInAnonymously } from "firebase/auth";
 
+const MAIN_CATEGORIES = [
+  { value: "UTTAR PRADESH", hi: "उत्तर प्रदेश", en: "Uttar Pradesh", icon: "🏛️" },
+  { value: "CRIME", hi: "क्राइम / अपराध", en: "Crime", icon: "🚨" },
+  { value: "POLITICS", hi: "राजनीति", en: "Politics", icon: "🗳️" },
+  { value: "INDIA", hi: "देश / राष्ट्रीय", en: "India / National", icon: "🇮🇳" },
+  { value: "WEATHER", hi: "मौसम समाचार", en: "Weather", icon: "☀️" },
+  { value: "BUSINESS", hi: "व्यापार / बिज़नेस", en: "Business", icon: "📈" },
+  { value: "SPORTS", hi: "खेल जगत", en: "Sports", icon: "🏏" },
+  { value: "ENTERTAINMENT", hi: "मनोरंजन", en: "Entertainment", icon: "🎬" },
+  { value: "TECHNOLOGY", hi: "टेक्नोलॉजी / टेक", en: "Technology", icon: "💻" },
+  { value: "EDUCATION", hi: "शिक्षा / रोज़गार", en: "Education", icon: "📚" },
+  { value: "HEALTH", hi: "स्वास्थ्य / सेहत", en: "Health", icon: "🏥" },
+  { value: "WORLD", hi: "दुनिया / विदेश", en: "World", icon: "🌍" }
+];
+
+const UP_DISTRICTS_LIST = [
+  "Sitapur", "Lucknow", "Lakhimpur Kheri", "Hardoi", "Barabanki", "Bahraich",
+  "Agra", "Aligarh", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Ayodhya", "Azamgarh", 
+  "Baghpat", "Ballia", "Balrampur", "Banda", "Bareilly", "Basti", 
+  "Bhadohi", "Bijnor", "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", 
+  "Etawah", "Farrukhabad", "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", 
+  "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur", "Hapur", "Hathras", "Jalaun", 
+  "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar", "Kasganj", "Kaushambi", 
+  "Kushinagar", "Lalitpur", "Maharajganj", "Mahoba", "Mainpuri", 
+  "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", 
+  "Pratapgarh", "Prayagraj", "Raebareli", "Rampur", "Saharanpur", "Sambhal", 
+  "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shravasti", "Siddharthnagar", 
+  "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"
+];
+
 export default function Admin() {
   const [contentValue, setContentValue] = useState("");
   const [contentEnValue, setContentEnValue] = useState("");
+  const [formCategory, setFormCategory] = useState("UTTAR PRADESH");
+  const [formDistrict, setFormDistrict] = useState("Sitapur");
+  const [editCategory, setEditCategory] = useState("UTTAR PRADESH");
+  const [editDistrict, setEditDistrict] = useState("");
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("adminToken") !== null);
@@ -56,7 +90,8 @@ export default function Admin() {
     window.print();
   };
 
-  const filteredDonations = donations.filter(d => {
+  const filteredDonations = (Array.isArray(donations) ? donations : []).filter(d => {
+    if (!d) return false;
     const matchesSearch = !donationSearch || 
       (d.donorName || '').toLowerCase().includes(donationSearch.toLowerCase()) ||
       (d.mobile || '').includes(donationSearch) ||
@@ -270,9 +305,11 @@ export default function Admin() {
         finalImageUrl = await toBase64(imageFile);
       }
 
-      const updatedNewsItem = {
+      const updatedNewsItem: any = {
         headline: (form.headline as HTMLInputElement).value,
         category: (form.category as HTMLSelectElement).value,
+        district: (form.district as HTMLSelectElement)?.value || "",
+        state: "Uttar Pradesh",
         content: (form.content as HTMLTextAreaElement).value,
         featuredImage: finalImageUrl,
         videoUrl: finalVideoUrl,
@@ -371,7 +408,7 @@ export default function Admin() {
         {news.length > 0 ? (
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={news.slice(0, 10).map(n => ({ name: n.headline.substring(0, 15) + '...', views: n.views || 0 })).sort((a,b) => b.views - a.views)}>
+              <BarChart data={(news || []).slice(0, 10).map(n => ({ name: (n?.headline || '').substring(0, 15) + '...', views: n?.views || 0 })).sort((a,b) => b.views - a.views)}>
                 <XAxis dataKey="name" tick={{fontSize: 10}} interval={0} angle={-45} textAnchor="end" height={60} />
                 <YAxis />
                 <Tooltip />
@@ -469,12 +506,12 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredDonations.length === 0 ? (
+                {!Array.isArray(filteredDonations) || filteredDonations.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-slate-500">No donations found matching your search.</td>
                   </tr>
                 ) : (
-                  filteredDonations.map(donation => (
+                  (filteredDonations || []).map(donation => (
                     <tr key={donation.id} className="hover:bg-slate-50">
                       <td className="p-4 whitespace-nowrap">
                         <div className="font-bold text-slate-900">
@@ -582,20 +619,29 @@ export default function Admin() {
                     finalImageUrl = 'https://picsum.photos/seed/' + Math.random() + '/800/450';
                   }
 
+                  const selectedCategory = (form.category as HTMLSelectElement).value;
+                  const selectedDistrict = (form.district as HTMLSelectElement)?.value || "";
+
                   const newsItem = {
                     headline: (form.headline as HTMLInputElement).value,
-                    category: (form.category as HTMLSelectElement).value,
+                    category: selectedCategory,
+                    district: selectedDistrict,
+                    state: "Uttar Pradesh",
                     content: (form.content as HTMLTextAreaElement).value,
                     featuredImage: finalImageUrl,
                     videoUrl: finalVideoUrl ? getEmbedUrl(finalVideoUrl) : null,
                     isBreaking: (form.isBreaking as HTMLInputElement).checked,
                     publicationDate: new Date().toISOString(),
                     author: (form.reporter as HTMLInputElement).value || "मो० शाहनवाज़",
-                    sourceAttribution: "LIVE UP 18 NEWS"
+                    sourceAttribution: "LIVE UP 18 NEWS",
+                    status: "published",
+                    views: 0
                   };
                   await addDoc(collection(db, "news"), newsItem);
       sessionStorage.clear(); // Clear cache so new news appears immediately
                   form.reset();
+                  setFormCategory("UTTAR PRADESH");
+                  setFormDistrict("Sitapur");
                   setContentValue("");
                   setContentEnValue("");
                   fetchData();
@@ -607,97 +653,89 @@ export default function Admin() {
                   setIsProcessing(false);
                 }
               }} className="flex flex-col gap-3">
-                <input name="headline" required placeholder="Headline" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
+                <input name="headline" required placeholder="Headline (खबर की हेडलाइन)" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
                 <label className="flex items-center gap-2 text-sm font-bold text-slate-700"><input type="checkbox" name="isBreaking" className="w-4 h-4 accent-red-600" /> Mark as Breaking News (Ticker)</label>
-                <select name="category" required className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600">
-                                    <optgroup label="Main Categories">
-                    <option value="INDIA">India</option>
-                    <option value="UTTAR PRADESH">Uttar Pradesh</option>
-                    <option value="POLITICS">Politics</option>
-                    <option value="CRIME">Crime</option>
-                    <option value="WEATHER">Weather (मौसम)</option>
-                    <option value="BUSINESS">Business</option>
-                    <option value="SPORTS">Sports</option>
-                    <option value="ENTERTAINMENT">Entertainment</option>
-                  </optgroup>
-                  <optgroup label="UP Districts">
-                    <option value="AGRA">Agra</option>
-                    <option value="ALIGARH">Aligarh</option>
-                    <option value="AMBEDKAR NAGAR">Ambedkar Nagar</option>
-                    <option value="AMETHI">Amethi</option>
-                    <option value="AMROHA">Amroha</option>
-                    <option value="AURAIYA">Auraiya</option>
-                    <option value="AYODHYA">Ayodhya</option>
-                    <option value="AZAMGARH">Azamgarh</option>
-                    <option value="BAGHPAT">Baghpat</option>
-                    <option value="BAHRAICH">Bahraich</option>
-                    <option value="BALLIA">Ballia</option>
-                    <option value="BALRAMPUR">Balrampur</option>
-                    <option value="BANDA">Banda</option>
-                    <option value="BARABANKI">Barabanki</option>
-                    <option value="BAREILLY">Bareilly</option>
-                    <option value="BASTI">Basti</option>
-                    <option value="BHADOHI">Bhadohi</option>
-                    <option value="BIJNOR">Bijnor</option>
-                    <option value="BUDAUN">Budaun</option>
-                    <option value="BULANDSHAHR">Bulandshahr</option>
-                    <option value="CHANDAULI">Chandauli</option>
-                    <option value="CHITRAKOOT">Chitrakoot</option>
-                    <option value="DEORIA">Deoria</option>
-                    <option value="ETAH">Etah</option>
-                    <option value="ETAWAH">Etawah</option>
-                    <option value="FARRUKHABAD">Farrukhabad</option>
-                    <option value="FATEHPUR">Fatehpur</option>
-                    <option value="FIROZABAD">Firozabad</option>
-                    <option value="GAUTAM BUDDHA NAGAR">Gautam Buddha Nagar</option>
-                    <option value="GHAZIABAD">Ghaziabad</option>
-                    <option value="GHAZIPUR">Ghazipur</option>
-                    <option value="GONDA">Gonda</option>
-                    <option value="GORAKHPUR">Gorakhpur</option>
-                    <option value="HAMIRPUR">Hamirpur</option>
-                    <option value="HAPUR">Hapur</option>
-                    <option value="HARDOI">Hardoi</option>
-                    <option value="HATHRAS">Hathras</option>
-                    <option value="JALAUN">Jalaun</option>
-                    <option value="JAUNPUR">Jaunpur</option>
-                    <option value="JHANSI">Jhansi</option>
-                    <option value="KANNAUJ">Kannauj</option>
-                    <option value="KANPUR DEHAT">Kanpur Dehat</option>
-                    <option value="KANPUR NAGAR">Kanpur Nagar</option>
-                    <option value="KASGANJ">Kasganj</option>
-                    <option value="KAUSHAMBI">Kaushambi</option>
-                    <option value="KHERI">Kheri</option>
-                    <option value="KUSHINAGAR">Kushinagar</option>
-                    <option value="LALITPUR">Lalitpur</option>
-                    <option value="LUCKNOW">Lucknow</option>
-                    <option value="MAHARAJGANJ">Maharajganj</option>
-                    <option value="MAHOBA">Mahoba</option>
-                    <option value="MAINPURI">Mainpuri</option>
-                    <option value="MATHURA">Mathura</option>
-                    <option value="MAU">Mau</option>
-                    <option value="MEERUT">Meerut</option>
-                    <option value="MIRZAPUR">Mirzapur</option>
-                    <option value="MORADABAD">Moradabad</option>
-                    <option value="MUZAFFARNAGAR">Muzaffarnagar</option>
-                    <option value="PILIBHIT">Pilibhit</option>
-                    <option value="PRATAPGARH">Pratapgarh</option>
-                    <option value="PRAYAGRAJ">Prayagraj</option>
-                    <option value="RAEBARELI">Raebareli</option>
-                    <option value="RAMPUR">Rampur</option>
-                    <option value="SAHARANPUR">Saharanpur</option>
-                    <option value="SAMBHAL">Sambhal</option>
-                    <option value="SANT KABIR NAGAR">Sant Kabir Nagar</option>
-                    <option value="SHAHJAHANPUR">Shahjahanpur</option>
-                    <option value="SHAMLI">Shamli</option>
-                    <option value="SHRAVASTI">Shravasti</option>
-                    <option value="SIDDHARTHNAGAR">Siddharthnagar</option>
-                    <option value="SITAPUR">Sitapur</option>
-                    <option value="SONBHADRA">Sonbhadra</option>
-                    <option value="SULTANPUR">Sultanpur</option>
-                    <option value="UNNAO">Unnao</option>
-                    <option value="VARANASI">Varanasi</option>
-                  </optgroup>
-                </select>
+                
+                {/* CATEGORY & DISTRICT SELECTOR */}
+                <div className="bg-gradient-to-r from-red-50/70 to-slate-50 border-2 border-red-200 rounded-xl p-4 flex flex-col gap-3.5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-red-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Tag size={18} className="text-red-600" />
+                      <span className="text-sm font-black text-slate-900 tracking-wide">
+                        खबर की कैटेगरी चुनें (Select News Category) *
+                      </span>
+                    </div>
+                    <span className="text-xs bg-red-600 text-white font-bold px-2.5 py-1 rounded-full shadow-xs">
+                      चुनी गई: {MAIN_CATEGORIES.find(c => c.value === formCategory)?.hi || formCategory}
+                    </span>
+                  </div>
+
+                  {/* Quick select buttons */}
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                      त्वरित चयन (Quick Select):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {MAIN_CATEGORIES.map(cat => (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => setFormCategory(cat.value)}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            formCategory === cat.value
+                              ? "bg-red-600 text-white shadow-md ring-2 ring-red-400 scale-105"
+                              : "bg-white text-slate-700 border border-slate-200 hover:border-red-400 hover:bg-red-50/50"
+                          }`}
+                        >
+                          <span>{cat.icon}</span>
+                          <span>{cat.hi}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dropdowns */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1 block">
+                        कैटेगरी लिस्ट (All Categories):
+                      </label>
+                      <select
+                        name="category"
+                        value={formCategory}
+                        onChange={(e) => setFormCategory(e.target.value)}
+                        required
+                        className="w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-red-600 shadow-xs"
+                      >
+                        {MAIN_CATEGORIES.map(cat => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.icon} {cat.hi} ({cat.en})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
+                        <MapPin size={13} className="text-red-600" />
+                        संबंधित ज़िला (District / Location):
+                      </label>
+                      <select
+                        name="district"
+                        value={formDistrict}
+                        onChange={(e) => setFormDistrict(e.target.value)}
+                        className="w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-red-600 shadow-xs"
+                      >
+                        <option value="">कोई विशेष ज़िला नहीं (पूरे राज्य/देश के लिए)</option>
+                        {UP_DISTRICTS_LIST.map(dist => (
+                          <option key={dist} value={dist}>
+                            {dist} {dist === 'Sitapur' ? '⭐ (सीतापुर - हेडक्वार्टर)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 
                 <input name="reporter" placeholder="रिपोर्टर का नाम (Reporter Name)" defaultValue="मो० शाहनवाज़" className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
                 
@@ -959,7 +997,7 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {news.map(article => (
+                  {(Array.isArray(news) ? news : []).map(article => (
                     <tr key={article.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="px-4 py-3 font-medium text-slate-900">
                         <div className="line-clamp-1" title={getLocalizedText(article, 'headline', language)}>
@@ -968,7 +1006,15 @@ export default function Admin() {
                         <div className="text-xs text-slate-400 line-clamp-1">{article.sourceAttribution}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">{article.category}</span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">{article.category}</span>
+                          {article.district && (
+                            <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-0.5">
+                              <MapPin size={10} className="text-red-500" />
+                              {article.district}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
                         {article.publicationDate ? new Date(article.publicationDate).toLocaleDateString() : "No Date"}
@@ -997,7 +1043,11 @@ export default function Admin() {
                           </button>
                         )}
                         <button 
-                          onClick={() => setEditingArticle(article)}
+                          onClick={() => {
+                            setEditingArticle(article);
+                            setEditCategory(article.category || "UTTAR PRADESH");
+                            setEditDistrict(article.district || "");
+                          }}
                           className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
                           title="Edit News"
                         >
@@ -1048,96 +1098,86 @@ export default function Admin() {
                   <input type="checkbox" name="isBreaking" defaultChecked={editingArticle.isBreaking} className="w-4 h-4 accent-red-600" /> Mark as Breaking News (Ticker)
                 </label>
                 
-                {/* We just use a standard input for category here for simplicity, or re-render the select if needed. A simple text input with datalist or just select */}
-                <select name="category" required defaultValue={editingArticle.category} className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600">
-                  <optgroup label="Main Categories">
-                    <option value="INDIA">India</option>
-                    <option value="UTTAR PRADESH">Uttar Pradesh</option>
-                    <option value="POLITICS">Politics</option>
-                    <option value="CRIME">Crime</option>
-                    <option value="WEATHER">Weather (मौसम)</option>
-                    <option value="BUSINESS">Business</option>
-                    <option value="SPORTS">Sports</option>
-                    <option value="ENTERTAINMENT">Entertainment</option>
-                  </optgroup>
-                  <optgroup label="UP Districts">
-                    <option value="AGRA">Agra</option>
-                    <option value="ALIGARH">Aligarh</option>
-                    <option value="AMBEDKAR NAGAR">Ambedkar Nagar</option>
-                    <option value="AMETHI">Amethi</option>
-                    <option value="AMROHA">Amroha</option>
-                    <option value="AURAIYA">Auraiya</option>
-                    <option value="AYODHYA">Ayodhya</option>
-                    <option value="AZAMGARH">Azamgarh</option>
-                    <option value="BAGHPAT">Baghpat</option>
-                    <option value="BAHRAICH">Bahraich</option>
-                    <option value="BALLIA">Ballia</option>
-                    <option value="BALRAMPUR">Balrampur</option>
-                    <option value="BANDA">Banda</option>
-                    <option value="BARABANKI">Barabanki</option>
-                    <option value="BAREILLY">Bareilly</option>
-                    <option value="BASTI">Basti</option>
-                    <option value="BHADOHI">Bhadohi</option>
-                    <option value="BIJNOR">Bijnor</option>
-                    <option value="BUDAUN">Budaun</option>
-                    <option value="BULANDSHAHR">Bulandshahr</option>
-                    <option value="CHANDAULI">Chandauli</option>
-                    <option value="CHITRAKOOT">Chitrakoot</option>
-                    <option value="DEORIA">Deoria</option>
-                    <option value="ETAH">Etah</option>
-                    <option value="ETAWAH">Etawah</option>
-                    <option value="FARRUKHABAD">Farrukhabad</option>
-                    <option value="FATEHPUR">Fatehpur</option>
-                    <option value="FIROZABAD">Firozabad</option>
-                    <option value="GAUTAM BUDDHA NAGAR">Gautam Buddha Nagar</option>
-                    <option value="GHAZIABAD">Ghaziabad</option>
-                    <option value="GHAZIPUR">Ghazipur</option>
-                    <option value="GONDA">Gonda</option>
-                    <option value="GORAKHPUR">Gorakhpur</option>
-                    <option value="HAMIRPUR">Hamirpur</option>
-                    <option value="HAPUR">Hapur</option>
-                    <option value="HARDOI">Hardoi</option>
-                    <option value="HATHRAS">Hathras</option>
-                    <option value="JALAUN">Jalaun</option>
-                    <option value="JAUNPUR">Jaunpur</option>
-                    <option value="JHANSI">Jhansi</option>
-                    <option value="KANNAUJ">Kannauj</option>
-                    <option value="KANPUR DEHAT">Kanpur Dehat</option>
-                    <option value="KANPUR NAGAR">Kanpur Nagar</option>
-                    <option value="KASGANJ">Kasganj</option>
-                    <option value="KAUSHAMBI">Kaushambi</option>
-                    <option value="KHERI">Kheri</option>
-                    <option value="KUSHINAGAR">Kushinagar</option>
-                    <option value="LALITPUR">Lalitpur</option>
-                    <option value="LUCKNOW">Lucknow</option>
-                    <option value="MAHARAJGANJ">Maharajganj</option>
-                    <option value="MAHOBA">Mahoba</option>
-                    <option value="MAINPURI">Mainpuri</option>
-                    <option value="MATHURA">Mathura</option>
-                    <option value="MAU">Mau</option>
-                    <option value="MEERUT">Meerut</option>
-                    <option value="MIRZAPUR">Mirzapur</option>
-                    <option value="MORADABAD">Moradabad</option>
-                    <option value="MUZAFFARNAGAR">Muzaffarnagar</option>
-                    <option value="PILIBHIT">Pilibhit</option>
-                    <option value="PRATAPGARH">Pratapgarh</option>
-                    <option value="PRAYAGRAJ">Prayagraj</option>
-                    <option value="RAEBARELI">Raebareli</option>
-                    <option value="RAMPUR">Rampur</option>
-                    <option value="SAHARANPUR">Saharanpur</option>
-                    <option value="SAMBHAL">Sambhal</option>
-                    <option value="SANT KABIR NAGAR">Sant Kabir Nagar</option>
-                    <option value="SHAHJAHANPUR">Shahjahanpur</option>
-                    <option value="SHAMLI">Shamli</option>
-                    <option value="SHRAVASTI">Shravasti</option>
-                    <option value="SIDDHARTHNAGAR">Siddharthnagar</option>
-                    <option value="SITAPUR">Sitapur</option>
-                    <option value="SONBHADRA">Sonbhadra</option>
-                    <option value="SULTANPUR">Sultanpur</option>
-                    <option value="UNNAO">Unnao</option>
-                    <option value="VARANASI">Varanasi</option>
-                  </optgroup>
-                </select>
+                {/* CATEGORY & DISTRICT SELECTOR FOR EDITING */}
+                <div className="bg-gradient-to-r from-blue-50/70 to-slate-50 border-2 border-blue-200 rounded-xl p-4 flex flex-col gap-3.5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-blue-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Tag size={18} className="text-blue-600" />
+                      <span className="text-sm font-black text-slate-900 tracking-wide">
+                        खबर की कैटेगरी बदलें (Change News Category) *
+                      </span>
+                    </div>
+                    <span className="text-xs bg-blue-600 text-white font-bold px-2.5 py-1 rounded-full shadow-xs">
+                      चुनी गई: {MAIN_CATEGORIES.find(c => c.value === editCategory)?.hi || editCategory}
+                    </span>
+                  </div>
+
+                  {/* Quick select buttons */}
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                      त्वरित चयन (Quick Select):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {MAIN_CATEGORIES.map(cat => (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => setEditCategory(cat.value)}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            editCategory === cat.value
+                              ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-400 scale-105"
+                              : "bg-white text-slate-700 border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50"
+                          }`}
+                        >
+                          <span>{cat.icon}</span>
+                          <span>{cat.hi}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dropdowns */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1 block">
+                        कैटेगरी लिस्ट (All Categories):
+                      </label>
+                      <select
+                        name="category"
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        required
+                        className="w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-600 shadow-xs"
+                      >
+                        {MAIN_CATEGORIES.map(cat => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.icon} {cat.hi} ({cat.en})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-1 block flex items-center gap-1">
+                        <MapPin size={13} className="text-blue-600" />
+                        संबंधित ज़िला (District / Location):
+                      </label>
+                      <select
+                        name="district"
+                        value={editDistrict}
+                        onChange={(e) => setEditDistrict(e.target.value)}
+                        className="w-full border-2 border-slate-300 rounded-lg px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-600 shadow-xs"
+                      >
+                        <option value="">कोई विशेष ज़िला नहीं (पूरे राज्य/देश के लिए)</option>
+                        {UP_DISTRICTS_LIST.map(dist => (
+                          <option key={dist} value={dist}>
+                            {dist} {dist === 'Sitapur' ? '⭐ (सीतापुर - हेडक्वार्टर)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 
                 <input name="reporter" placeholder="रिपोर्टर का नाम (Reporter Name)" defaultValue={editingArticle.author} className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-red-600" />
                 

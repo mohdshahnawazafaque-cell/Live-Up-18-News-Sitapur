@@ -324,16 +324,16 @@ ${url}`;
         {/* Main Content */}
         <div className="lg:w-2/3">
           <article className="prose prose-lg dark:prose-invert max-w-none font-sans text-slate-800 dark:text-slate-300 leading-relaxed mb-12 prose-headings:font-heading prose-headings:font-black prose-a:text-red-600">
-            {getLocalizedText(article, 'content', language).split('\n').map((paragraph, index) => (
+            {(getLocalizedText(article, 'content', language) || '').split('\n').map((paragraph, index) => (
               <p key={index} className="mb-6">{paragraph}</p>
             ))}
           </article>
 
           {/* Tags */}
-          {article.tags && article.tags.length > 0 && (
+          {article.tags && Array.isArray(article.tags) && article.tags.length > 0 && (
             <div className="flex items-center gap-3 border-t border-slate-200 dark:border-slate-800 pt-8 mt-8 flex-wrap">
               <Tag size={18} className="text-slate-400" />
-              {getLocalizedArray(article, 'tags', language).map(tag => (
+              {(getLocalizedArray(article, 'tags', language) || []).map(tag => (
                 <span key={tag} className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1 text-sm font-medium rounded-full">
                   {tag}
                 </span>

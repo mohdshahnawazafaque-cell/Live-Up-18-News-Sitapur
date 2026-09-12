@@ -19,15 +19,17 @@ export default function PollWidget() {
         const snap = await getCachedDocs(q, 'PollWidget-data');
         if (snap && snap.length > 0) {
           const pollData = snap[0] as Poll;
-          setPoll(pollData);
-          
-          let total = 0;
-          pollData.options.forEach(opt => total += opt.votes);
-          setTotalVotes(total);
+          if (pollData && Array.isArray(pollData.options)) {
+            setPoll(pollData);
+            
+            let total = 0;
+            pollData.options.forEach(opt => total += (opt?.votes || 0));
+            setTotalVotes(total);
 
-          // Check local storage
-          if (localStorage.getItem(`poll_voted_${pollData.id}`)) {
-            setHasVoted(true);
+            // Check local storage
+            if (localStorage.getItem(`poll_voted_${pollData.id}`)) {
+              setHasVoted(true);
+            }
           }
         }
       } catch (err) {
@@ -38,21 +40,18 @@ export default function PollWidget() {
   }, []);
 
   const handleVote = async (optionId: string) => {
-    if (!poll || hasVoted) return;
+    if (!poll || hasVoted || !Array.isArray(poll.options)) return;
     
     try {
       // Optimistic update
       setHasVoted(true);
       const newOptions = poll.options.map(opt => 
-        opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
+        opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
       );
       setPoll({ ...poll, options: newOptions });
       setTotalVotes(totalVotes + 1);
       localStorage.setItem(`poll_voted_${poll.id}`, 'true');
 
-      // Note: A true robust system would use a subcollection or transaction, but for this scale we'll update the array.
-      // Firestore doesn't easily allow array element increments. So we'll rewrite the array.
-      // In a high traffic scenario this can cause race conditions.
       const pollRef = doc(db, "polls", poll.id);
       await updateDoc(pollRef, {
         options: newOptions
@@ -63,7 +62,7 @@ export default function PollWidget() {
     }
   };
 
-  if (!poll) return null;
+  if (!poll || !Array.isArray(poll.options) || poll.options.length === 0) return null;
 
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-sm mb-8">
@@ -76,7 +75,7 @@ export default function PollWidget() {
       </p>
       
       <div className="flex flex-col gap-3">
-        {poll.options.map((option) => {
+        {(Array.isArray(poll.options) ? poll.options : []).map((option) => {
           const percentage = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
           
           return (

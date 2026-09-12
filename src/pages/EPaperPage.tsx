@@ -18,8 +18,10 @@ export default function EPaperPage() {
         const q = query(collection(db, "epapers"), orderBy("date", "desc"));
         const snap = await getCachedDocs(q, 'EPaperPage-data');
         const fetched: EPaper[] = [];
-        snap.forEach(doc => {
-          fetched.push({ id: doc.id, ...doc.data() } as EPaper);
+        (Array.isArray(snap) ? snap : []).forEach((item: any) => {
+          if (item) {
+            fetched.push({ id: item.id, ...(typeof item.data === 'function' ? item.data() : item) } as EPaper);
+          }
         });
         setEpapers(fetched);
       } catch (err) {
@@ -58,7 +60,7 @@ export default function EPaperPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {epapers.map((paper) => (
+          {(Array.isArray(epapers) ? epapers : []).map((paper) => (
             <div key={paper.id} className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden group flex flex-col">
               <div className="aspect-[3/4] bg-slate-100 relative overflow-hidden">
                 {paper.thumbnailUrl ? (
@@ -70,7 +72,15 @@ export default function EPaperPage() {
                   </div>
                 )}
                 <div className="absolute top-0 left-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-br-lg shadow-md">
-                  {format(new Date(paper.date), 'dd MMM yyyy')}
+                  {(() => {
+                    try {
+                      const d = paper.date ? new Date(paper.date) : null;
+                      if (!d || isNaN(d.getTime())) return '';
+                      return format(d, 'dd MMM yyyy');
+                    } catch {
+                      return '';
+                    }
+                  })()}
                 </div>
               </div>
               <div className="p-4 flex flex-col flex-1">

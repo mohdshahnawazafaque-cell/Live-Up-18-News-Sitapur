@@ -19,14 +19,17 @@ export default function Search() {
       try {
         const q = fsQuery(collection(db, "news"), orderBy("publicationDate", "desc"), limit(100));
         const snap = await getCachedDocs(q, `search-${query}`);
-        const articles: NewsArticle[] = (snap || []) as NewsArticle[];
+        const articles: NewsArticle[] = (Array.isArray(snap) ? snap : []) as NewsArticle[];
         
         if (query) {
           const lowerQuery = query.toLowerCase();
           const filtered = articles.filter((a: NewsArticle) => { 
+             if (!a) return false;
              const titleMatch = (a.headline || "").toLowerCase().includes(lowerQuery) || (a.headlineEn || "").toLowerCase().includes(lowerQuery);
-             const contentMatch = (a.shortSummary || "").toLowerCase().includes(lowerQuery) || (a.shortSummaryEn || "").toLowerCase().includes(lowerQuery);
-             return titleMatch || contentMatch;
+             const contentMatch = (a.shortSummary || "").toLowerCase().includes(lowerQuery) || (a.shortSummaryEn || "").toLowerCase().includes(lowerQuery) || (a.content || "").toLowerCase().includes(lowerQuery);
+             const categoryMatch = (a.category || "").toLowerCase().includes(lowerQuery);
+             const districtMatch = (a.district || "").toLowerCase().includes(lowerQuery);
+             return titleMatch || contentMatch || categoryMatch || districtMatch;
           });
           setResults(filtered);
         } else {
@@ -49,9 +52,9 @@ export default function Search() {
       
       {loading ? (
         <div className="text-center py-20 animate-pulse text-slate-500">Loading...</div>
-      ) : results.length > 0 ? (
+      ) : Array.isArray(results) && results.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {results.map((news) => (
+          {(results || []).filter(Boolean).map((news) => (
             <Link key={news.id} to={`/article/${news.id}`} className="group bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-slate-100 dark:border-slate-700 flex flex-col h-full">
               <div className="aspect-video overflow-hidden relative bg-slate-100 dark:bg-slate-700">
                 {news.featuredImage && (

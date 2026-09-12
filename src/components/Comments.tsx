@@ -88,12 +88,12 @@ export default function Comments({ articleId }: { articleId: string }) {
       </form>
 
       <div className="flex flex-col gap-4">
-        {comments.length === 0 ? (
+        {!Array.isArray(comments) || comments.length === 0 ? (
           <p className="text-slate-500 italic">
             {language === 'hi' ? 'अभी तक कोई कमेंट नहीं है। अपनी राय देने वाले पहले व्यक्ति बनें!' : 'No comments yet. Be the first to share your opinion!'}
           </p>
         ) : (
-          comments.map(c => (
+          (comments || []).map(c => (
             <div key={c.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-slate-800">{c.authorName}</span>

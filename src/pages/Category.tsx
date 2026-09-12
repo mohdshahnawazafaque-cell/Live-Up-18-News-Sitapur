@@ -41,13 +41,22 @@ export default function Category() {
       try {
         const q = query(collection(db, "news"), limit(200));
         const snap = await getCachedDocs(q, 'all-news-for-category');
-        const fetchedArticles = (snap || []) as NewsArticle[];
+        const fetchedArticles = (Array.isArray(snap) ? snap : []) as NewsArticle[];
         
         // Filter by category slug safely
         const filtered = fetchedArticles.filter((article) => {
-          if (article.status === 'draft') return false;
+          if (!article || article.status === 'draft') return false;
           const artCat = (article.category || '').toLowerCase().replace(/[-_]/g, ' ').trim();
-          return artCat === categorySlug;
+          const artDist = (article.district || '').toLowerCase().replace(/[-_]/g, ' ').trim();
+
+          if (categorySlug === 'video news') {
+            return Boolean(article.videoUrl) || artCat === 'video news';
+          }
+          if (categorySlug === 'photo gallery') {
+            return Boolean(article.featuredImage) || artCat === 'photo gallery';
+          }
+
+          return artCat === categorySlug || (artDist && artDist === categorySlug);
         });
 
         filtered.sort((a, b) => (new Date(b.publicationDate || 0)).getTime() - (new Date(a.publicationDate || 0)).getTime());
@@ -105,7 +114,7 @@ export default function Category() {
         </h1>
       </div>
 
-      {articles.length === 0 ? (
+      {!Array.isArray(articles) || articles.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-xl text-slate-500 dark:text-slate-400 font-medium">
             {language === 'hi' ? 'इस श्रेणी में कोई समाचार नहीं मिला।' : 'No articles found in this category.'}
@@ -113,7 +122,7 @@ export default function Category() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {articles.map((article) => (
+          {(articles || []).filter(Boolean).map((article) => (
             <Link key={article.id} to={`/article/${article.id}`} className="group flex flex-col">
               <div className="relative aspect-[4/3] overflow-hidden rounded-lg mb-5 bg-slate-100 dark:bg-slate-900">
                 <img 

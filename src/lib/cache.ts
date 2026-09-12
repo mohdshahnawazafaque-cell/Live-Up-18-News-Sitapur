@@ -2,7 +2,25 @@ import { Query, getDocs, getDoc, DocumentReference } from "firebase/firestore";
 import { FALLBACK_ARTICLES } from "../data/fallbackNews";
 
 const CACHE_DURATION_MS = 15 * 60 * 1000; // 15 minutes cache for high performance
-const PERSISTENT_NEWS_KEY = "liveup18_persisted_articles";
+const PERSISTENT_NEWS_KEY = "liveup18_persisted_articles_v3";
+const CACHE_VERSION_KEY = "liveup18_cache_version";
+const CURRENT_VERSION = "v3_clean_real";
+
+// Automatically clear legacy caches containing old dummy data
+if (typeof window !== 'undefined') {
+  try {
+    if (localStorage.getItem(CACHE_VERSION_KEY) !== CURRENT_VERSION) {
+      localStorage.removeItem("liveup18_persisted_articles");
+      localStorage.removeItem("home-news");
+      localStorage.removeItem("breaking-news");
+      localStorage.removeItem("trending-news");
+      localStorage.removeItem("latest-news-fallback");
+      sessionStorage.clear();
+      localStorage.setItem(CACHE_VERSION_KEY, CURRENT_VERSION);
+    }
+  } catch {}
+}
+
 const MEMORY_CACHE = new Map<string, { data: any; timestamp: number }>();
 
 function safeSetStorage(key: string, value: string) {
@@ -44,10 +62,13 @@ function fetchWithTimeout<T>(promise: Promise<T>, ms = 2500): Promise<T> {
   ]);
 }
 
-export async function getCachedDocs(q: Query, cacheKey: string) {
+export async function getCachedDocs(q: Query, cacheKey: string, fallbackData?: any[]) {
+  const isNewsQuery = cacheKey.includes('news') || cacheKey.includes('article') || cacheKey.includes('related') || cacheKey.includes('category') || cacheKey.includes('search');
+  const defaultFallback = fallbackData !== undefined ? fallbackData : (isNewsQuery ? FALLBACK_ARTICLES : []);
+
   // 1. Instant check in Memory Cache (0ms)
   const mem = MEMORY_CACHE.get(cacheKey);
-  if (mem && (Date.now() - mem.timestamp < CACHE_DURATION_MS) && Array.isArray(mem.data) && mem.data.length > 0) {
+  if (mem && (Date.now() - mem.timestamp < CACHE_DURATION_MS) && Array.isArray(mem.data)) {
     return mem.data;
   }
 
@@ -57,7 +78,7 @@ export async function getCachedDocs(q: Query, cacheKey: string) {
     const cached = safeGetStorage(cacheKey);
     if (cached) {
       const { data, timestamp } = JSON.parse(cached);
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         cachedData = data;
         MEMORY_CACHE.set(cacheKey, { data, timestamp });
         if (Date.now() - timestamp < CACHE_DURATION_MS) {
@@ -83,7 +104,7 @@ export async function getCachedDocs(q: Query, cacheKey: string) {
         data,
         timestamp: Date.now()
       }));
-      if (cacheKey.includes('news')) {
+      if (isNewsQuery) {
         try {
           localStorage.setItem(PERSISTENT_NEWS_KEY, JSON.stringify(data));
         } catch {}
@@ -91,25 +112,27 @@ export async function getCachedDocs(q: Query, cacheKey: string) {
       return data;
     }
     
-    return cachedData || FALLBACK_ARTICLES;
+    return cachedData || defaultFallback;
   } catch (error: any) {
     // Return cached or master persisted news or fallback
     if (cachedData && cachedData.length > 0) {
       return cachedData;
     }
 
-    try {
-      const persisted = localStorage.getItem(PERSISTENT_NEWS_KEY);
-      if (persisted) {
-        const parsed = JSON.parse(persisted);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          MEMORY_CACHE.set(cacheKey, { data: parsed, timestamp: Date.now() });
-          return parsed;
+    if (isNewsQuery) {
+      try {
+        const persisted = localStorage.getItem(PERSISTENT_NEWS_KEY);
+        if (persisted) {
+          const parsed = JSON.parse(persisted);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            MEMORY_CACHE.set(cacheKey, { data: parsed, timestamp: Date.now() });
+            return parsed;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
-    return FALLBACK_ARTICLES;
+    return defaultFallback;
   }
 }
 
